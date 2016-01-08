@@ -1,0 +1,19 @@
+{
+  "name": "breakout",
+  "version": "1.0.0",
+  "description": "breakout with AI",
+  "main": "js/main.js",
+  "scripts": {
+    "test": "open index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "none"
+  },
+  "keywords": [
+    "breakout",
+    "ai"
+  ],
+  "author": "Jacob Wunder <jacob@jacobwunder.com>",
+  "license": "MIT",
+}

@@ -1,0 +1,17 @@
+* {
+  margin:0;
+}
+
+#c {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: -99;
+}
+canvas {
+  display: block;
+}
+
+.pink {
+  border: pink 10px dotted;
+}
