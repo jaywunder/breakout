@@ -3,9 +3,8 @@
 'use strict'
 
 class Entity {
-  constructor(type, opts) {
-    this.type = type
-    this.id = this.type + '#' + (Math.floor(Math.random() * 10000))
+  constructor(opts) {
+    this.id = 'E-' + (Math.floor(Math.random() * 10000))
     this.alive = true
 
     this.pos = [opts.x  || 0, opts.y  || 0]
@@ -14,8 +13,6 @@ class Entity {
     this.size = [opts.width || 0, opts.height || 0]
     this.maxVel = opts.maxVel || 15;
     this.maxAcc = opts.maxAcc || 1;
-
-    this.body = new createjs.Shape();
   }
 
   get x() { return this.pos[0] }
@@ -38,25 +35,13 @@ class Entity {
   set width(value)  { this.size[0] = value }
   set height(value) { this.size[1] = value }
 
-  render() {
+  render() { }
 
+  update() { }
 
-    return this
-  }
+  collide(other) { }
 
-  update() {
-
-
-    return this
-  }
-
-  collide(other) {
-
-  }
-
-  kill() {
-    this.alive = false
-  }
+  kill() { this.alive = false }
 
   move() {
     if (this.vx > this.maxVel) this.vx = this.maxVel
@@ -74,10 +59,5 @@ class Entity {
 
     this.vx += this.ax
     this.vy += this.ay
-
-    this.body.x = this.x;
-    this.body.y = this.y;
-
-    return this
   }
 }

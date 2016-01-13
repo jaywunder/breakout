@@ -16,8 +16,6 @@ class CanvasButton {
     this.strokeWidth = args.strokeWidth || 5
     this.capStyle    = args.capStyle || 'round'
 
-    this.border = new createjs.Shape()
-    this.text = new createjs.Text(this.text, this.font, this.textColor)
     this.bounds = this.text.getBounds()
 
     this.draw()
@@ -25,7 +23,18 @@ class CanvasButton {
   }
 
   onClick(func) {
-    this.border.addEventListener('click', func)
+    this.parent.addEventListener('click', (event) => {
+      if (event.pageX > this.x &&
+          event.pageX < this.x + this.width &&
+          event.pageY > this.y &&
+          event.pageY > this.y + this.height)
+        {
+
+        console.log('click!');
+        func(event)
+
+      }
+    }, false)
   }
 
   draw() {
@@ -61,13 +70,25 @@ class CanvasButton {
     this.parent.update()
   }
 
-  textWidth() {
-    return this.text.getMeasuredWidth()
+  get width() {
+    // from this question http://stackoverflow.com/a/118251
+    var test = document.getElementById("text-width")
+    test.innerHTML = this.text
+    test.style.fontSize = this.font.split(' ')[0]
+    test.style.fontFamily = this.font.split(' ')[1]
+    return (test.clientWidth + 1 + (2 * this.strokeWidth) + (test.clientWidth / 5))
   }
 
-  textHeight() {
-    return this.text.getMeasuredHeight()
+  get height() {
+    var test = document.getElementById("text-width")
+    test.innerHTML = this.text
+    test.style.fontSize = this.font.split(' ')[0]
+    test.style.fontFamily = this.font.split(' ')[1]
+    return (test.clientHeight + 1 + (2 * this.strokeWidth) + (test.clientHeight / 5))
   }
+
+  set width(value) { new Error('can\'t set width of CanvasText object') }
+  set height(value) { new Error('can\'t set height of CanvasText object') }
 
   centeredX() {
     this._centeredX = true

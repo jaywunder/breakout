@@ -4,7 +4,7 @@
 
 class Paddle extends Entity {
   constructor() {
-    super('paddle', {
+    super({
       x: document.getElementById('c').width / 2 - 50,
       y: document.getElementById('c').height - 50,
       maxVel: 20, maxAcc: 2,

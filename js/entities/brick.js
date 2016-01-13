@@ -4,18 +4,22 @@
 
 class Brick extends Entity {
   constructor(x, y, color) {
-    super('brick', {
+    super({
       x, y,
       width: 40, height: 20,
       maxVel: 0, maxAcc: 0
     })
 
-    this.body.graphics
-      .beginFill(color || '#000000')
-      .drawRect(this.x, this.y, this.width, this.height)
+    this.color = color
   }
 
-  move() { return this } // bricks dont move haha
+  render(ctx) {
+    // console.log('I\'m getting rendered');
+    ctx.fillStyle = this.color
+    ctx.fillRect(this.x, this.y, this.width, this.height)
+  }
+
+  move() {  } // bricks dont move haha
 
   collide(other) {
     this.acc = [0, 0]

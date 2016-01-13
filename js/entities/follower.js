@@ -4,7 +4,7 @@
 
 class Follower extends Entity {
   constructor(other) {
-    super('follower', {
+    super({
       x: 0, y: 0
     })
     this.other = other

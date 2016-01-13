@@ -4,7 +4,7 @@
 
 class Ball extends Entity {
   constructor(x, y, paddle) {
-    super('ball', {
+    super({
       x, y,
       vx: 15, vy: 15,
       width: 15, height: 15
