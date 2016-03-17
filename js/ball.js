@@ -16,6 +16,7 @@ class Ball extends Entity {
       .beginFill("#dd520d")
       .drawCircle(this.width / 2, this.width / 2, this.width)
 
+    // TODO: change to "$(window).one"
     $(window).on('key-space', () => {
       this.isFollowing = false
       this.vx = this.paddle.vx

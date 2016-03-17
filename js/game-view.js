@@ -97,19 +97,19 @@ class GameView {
     if (BREAKOUTRUNNING) {
       this.checkCollisions()
 
-      for (let i in this.entities) {
-        this.entities[i]
-          .update()
-          .render()
-          .move();
-      }
-
       // garbage collect dead entities after all updates
       for (let i in this.entities) {
         if (this.entities[i].alive === false){
           this.stage.removeChild(this.entities[i].body)
           this.entities.splice(i, 1)
         }
+      }
+
+      for (let i in this.entities) {
+        this.entities[i]
+          .update()
+          .render()
+          .move();
       }
     }
 
@@ -136,7 +136,7 @@ class GameView {
         entity.y = canvas.height - entity.height
         entity.vy *= -1
 
-        // kill the ball if it hit's the floor
+        // kill the ball if it hits the floor
         if (entity instanceof Ball) {
           this.end()
         }
@@ -161,12 +161,10 @@ class GameView {
           let other = this.entities[j]
           if (other instanceof Follower) continue // followers don't collide
 
-          if (entity.x < other.x + other.width &&
-              entity.x + entity.width > other.x &&
-              entity.y < other.y + other.height &&
-              entity.height + entity.y > other.y)
+          if (this.isColliding(entity, other))
             { // sorry for ugly brace...
-              // console.log(entity.id + ' ->*<- ' + other.id + ' at ' + entity.pos + ' and ' + other.pos);
+              console.log(entity.id + ' ->*<- ' + other.id + ' at ' + entity.pos + ' and ' + other.pos);
+              console.log(`${other.id} is ${ other.alive ? 'alive' : 'dead' }`);
               this.collide(entity, other)
           }
         }
@@ -174,28 +172,57 @@ class GameView {
     }
   }
 
+  isColliding(entity, other) {
+    return (
+      entity.x < other.x + other.width &&
+      entity.x + entity.width > other.x &&
+      entity.y < other.y + other.height &&
+      entity.height + entity.y > other.y
+    )
+  }
+
   collide(ball, other) {
     if (other instanceof Brick) {
       // kill the brick
       other.kill();
 
-      // // bounce the ball
+      // bounce the ball
       // if (ball.x < other.x + other.width &&
       //     ball.x + ball.width > other.x) {
-      //   // console.log('balls to the floor!?');
+      //   ball.vx *= -1
+      //   ball.ax *= -1
+      // }
+      //
+      // if (ball.y < other.y + other.height &&
+      //     ball.height + ball.y > other.y) {
       //   ball.vy *= -1
       //   ball.ay *= -1
       // }
 
-      // if (ball.y < other.y + other.height &&
-      //     ball.height + ball.y > other.y) { //GAUGH DUDUDE THIS IS FUSTRATING
-      //   // console.log('balls to the wall!!');
-      //   ball.vx *= -1
-      //   ball.ax *= -1
-      // }
+      // let dx = ball.x - other.x
+      // let dy = ball.y - other.y
+      // let theta = Math.atan2(dy, dy)
+      // console.log(theta * 180 / Math.PI);
+      // BREAKOUTRUNNING = false
+
+      // http://gamedev.stackexchange.com/a/5430
+      // we need to do some time travelling to prevent overlapping entities
+      for (let t = 1; t > 0.01; t *= 0.8) {
+        if (this.isColliding(ball, other)) {
+          ball.x += ball.vx * t
+          ball.y += ball.vy * t
+        } else {
+          ball.x += ball.vx * -t
+          ball.y += ball.vy * -t
+        }
+        this.stage.update();
+      }
 
       ball.vy *= -1
       ball.ay *= -1
+
+      BREAKOUTRUNNING = false
+
     } else if (other instanceof Paddle) {
       // bounce the ball
       ball.vy *= -1
