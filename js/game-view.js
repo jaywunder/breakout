@@ -207,21 +207,25 @@ class GameView {
 
       // http://gamedev.stackexchange.com/a/5430
       // we need to do some time travelling to prevent overlapping entities
-      for (let t = 1; t > 0.01; t *= 0.8) {
+      // for (let t = 1; t > 0.01; t *= 0.8) {
+        console.log('before', ball.pos);
         if (this.isColliding(ball, other)) {
-          ball.x += ball.vx * t
-          ball.y += ball.vy * t
+          ball.x += -ball.vx
+          ball.y += -ball.vy
         } else {
-          ball.x += ball.vx * -t
-          ball.y += ball.vy * -t
+          ball.x += ball.vx
+          ball.y += ball.vy
         }
+        console.log('after', ball.pos);
+        ball.body.x = ball.x
+        ball.body.y = ball.y
         this.stage.update();
-      }
+      // }
 
       ball.vy *= -1
       ball.ay *= -1
 
-      BREAKOUTRUNNING = false
+      // BREAKOUTRUNNING = false
 
     } else if (other instanceof Paddle) {
       // bounce the ball
