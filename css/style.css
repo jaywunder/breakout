@@ -7,6 +7,7 @@
   top: 0px;
   left: 0px;
   z-index: -99;
+  background: black;
 }
 canvas {
   display: block;

@@ -26,4 +26,36 @@ window.addEventListener('keydown', (event) => {
   }
 })
 
-new ViewController()
+$('#c').height(window.innerWidth)
+
+// new ViewController()
+
+Physics((world) => {
+  let renderer = Physics.renderer('canvas', {
+    el: 'c',
+    width: $('#c').width(),
+    height: $('#c').height()
+  })
+
+  world.add(renderer)
+
+  var square = Physics.body('rectangle', {
+    x: 250,
+    y: 250,
+    width: 50,
+    height: 50
+  });
+  world.add( square );
+  world.render();
+
+  Physics.util.ticker.on(function( time, dt ){
+    world.step( time );
+  });
+
+  // start the ticker
+  Physics.util.ticker.start();
+
+  world.on('step', function(){
+    world.render();
+  });
+})
