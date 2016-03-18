@@ -8,7 +8,8 @@ class Paddle extends Entity {
       x: document.getElementById('c').width / 2 - 50,
       y: document.getElementById('c').height - yOffset,
       maxVel: 20, maxAcc: 2,
-      width: 180, height: 20,
+      width: document.getElementById('c').width / 5,
+      height: 20,
     })
 
     this.body.graphics
