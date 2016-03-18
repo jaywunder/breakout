@@ -186,9 +186,9 @@ class GameView {
           ball.y += ball.vy
         }
         // for debugging:
-        ball.body.x = ball.x
-        ball.body.y = ball.y
-        this.stage.update();
+        // ball.body.x = ball.x
+        // ball.body.y = ball.y
+        // this.stage.update();
       }
 
       if (ball.x < other.x + other.width &&
