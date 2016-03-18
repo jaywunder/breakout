@@ -58,12 +58,12 @@ class GameView {
     this.entities.push(new Paddle(yOffset))
     this.entities.push(new Ball(0, 200, this.entities[0]))
 
-    let blocksWidth = this.stage.canvas.width / 40
+    let blocksWidth = this.stage.canvas.width / 80
 
     let colors = [ "#e82014", "#ee8d0b", "#ddd51a", "#1bda23", "#145edf" ]
     for (let x = 0; x < blocksWidth; x++) {
       for (let y = 0; y < 5; y++) {
-        this.entities.push(new Brick(x * 40, y * 20 + yOffset, colors[y]))
+        this.entities.push(new Brick(x * 80, y * 40 + yOffset, colors[y]))
       }
     }
 
@@ -186,12 +186,23 @@ class GameView {
           ball.y += ball.vy
         }
         // for debugging:
-        // ball.body.x = ball.x
-        // ball.body.y = ball.y
-        // this.stage.update();
+        ball.body.x = ball.x
+        ball.body.y = ball.y
+        this.stage.update();
       }
-      ball.vy *= -1
-      ball.ay *= -1
+
+      if (ball.x < other.x + other.width &&
+          ball.x + ball.width > other.x) {
+        ball.vy *= -1
+      }
+
+      if (ball.y < other.y + other.height &&
+          ball.y + ball.height > other.y) {
+        ball.vx *= -1
+      }
+
+      // ball.vy *= -1
+      // ball.ay *= -1
 
     } else if (other instanceof Paddle) {
       // bounce the ball

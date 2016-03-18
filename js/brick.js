@@ -6,7 +6,7 @@ class Brick extends Entity {
   constructor(x, y, color) {
     super('brick', {
       x, y,
-      width: 40, height: 20,
+      width: 80, height: 40,
       maxVel: 0, maxAcc: 0
     })
 
