@@ -3,10 +3,10 @@
 'use strict';
 
 class Paddle extends Entity {
-  constructor() {
+  constructor(yOffset) {
     super('paddle', {
       x: document.getElementById('c').width / 2 - 50,
-      y: document.getElementById('c').height - 50,
+      y: document.getElementById('c').height - yOffset,
       maxVel: 20, maxAcc: 2,
       width: 180, height: 20,
     })

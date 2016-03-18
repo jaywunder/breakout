@@ -54,7 +54,8 @@ class GameView {
   }
 
   createEntitites() {
-    this.entities.push(new Paddle())
+    let yOffset = this.stage.canvas.height / 8
+    this.entities.push(new Paddle(yOffset))
     this.entities.push(new Ball(0, 200, this.entities[0]))
 
     let blocksWidth = this.stage.canvas.width / 40
@@ -62,7 +63,7 @@ class GameView {
     let colors = [ "#e82014", "#ee8d0b", "#ddd51a", "#1bda23", "#145edf" ]
     for (let x = 0; x < blocksWidth; x++) {
       for (let y = 0; y < 5; y++) {
-        this.entities.push(new Brick(x * 40, y * 20 + 50, colors[y]))
+        this.entities.push(new Brick(x * 40, y * 20 + yOffset, colors[y]))
       }
     }
 
@@ -99,7 +100,7 @@ class GameView {
 
       // garbage collect dead entities after all updates
       for (let i in this.entities) {
-        if (this.entities[i].alive === false){
+        if (!this.entities[i].alive){
           this.stage.removeChild(this.entities[i].body)
           this.entities.splice(i, 1)
         }
@@ -108,7 +109,7 @@ class GameView {
       for (let i in this.entities) {
         this.entities[i]
           .update()
-          .render()
+          // .render()
           .move();
       }
     }
@@ -125,26 +126,16 @@ class GameView {
       if (entity.x + entity.width > canvas.width){
         entity.x = canvas.width - entity.width
         entity.vx *= -1
-      }
-
-      if (entity.x < 0) {
+      } else if (entity.x < 0) {
         entity.x = 0
         entity.vx *= -1
-      }
-
-      if (entity.y + entity.height > canvas.height){
-        entity.y = canvas.height - entity.height
-        entity.vy *= -1
-
-        // kill the ball if it hits the floor
-        if (entity instanceof Ball) {
-          this.end()
-        }
-      }
-
-      if (entity.y < 0){
+      } else if (entity.y < 0){
         entity.y = 0
         entity.vy *= -1
+      } else if (entity.y + entity.height > canvas.height){
+        entity.y = canvas.height - entity.height
+        entity.vy *= -1
+        if (entity instanceof Ball) this.end()
       }
     }
   }
@@ -154,17 +145,15 @@ class GameView {
       let entity = this.entities[i]
 
       if (entity instanceof Ball) {
-        // console.log('found the ball');
 
         for (let j in this.entities) {
           if (i === j) continue // so the entity doesn't collide with itself
           let other = this.entities[j]
           if (other instanceof Follower) continue // followers don't collide
 
-          if (this.isColliding(entity, other))
-            { // sorry for ugly brace...
-              console.log(entity.id + ' ->*<- ' + other.id + ' at ' + entity.pos + ' and ' + other.pos);
-              console.log(`${other.id} is ${ other.alive ? 'alive' : 'dead' }`);
+          if (this.isColliding(entity, other)) {
+              // console.log(entity.id + ' ->*<- ' + other.id + ' at ' + entity.pos + ' and ' + other.pos);
+              // console.log(`${other.id} is ${ other.alive ? 'alive' : 'dead' }`);
               this.collide(entity, other)
           }
         }
@@ -186,29 +175,9 @@ class GameView {
       // kill the brick
       other.kill();
 
-      // bounce the ball
-      // if (ball.x < other.x + other.width &&
-      //     ball.x + ball.width > other.x) {
-      //   ball.vx *= -1
-      //   ball.ax *= -1
-      // }
-      //
-      // if (ball.y < other.y + other.height &&
-      //     ball.height + ball.y > other.y) {
-      //   ball.vy *= -1
-      //   ball.ay *= -1
-      // }
-
-      // let dx = ball.x - other.x
-      // let dy = ball.y - other.y
-      // let theta = Math.atan2(dy, dy)
-      // console.log(theta * 180 / Math.PI);
-      // BREAKOUTRUNNING = false
-
       // http://gamedev.stackexchange.com/a/5430
       // we need to do some time travelling to prevent overlapping entities
-      // for (let t = 1; t > 0.01; t *= 0.8) {
-        console.log('before', ball.pos);
+      for (let t = 1; t > 0.01; t *= 0.5) {
         if (this.isColliding(ball, other)) {
           ball.x += -ball.vx
           ball.y += -ball.vy
@@ -216,16 +185,13 @@ class GameView {
           ball.x += ball.vx
           ball.y += ball.vy
         }
-        console.log('after', ball.pos);
-        ball.body.x = ball.x
-        ball.body.y = ball.y
-        this.stage.update();
-      // }
-
+        // for debugging:
+        // ball.body.x = ball.x
+        // ball.body.y = ball.y
+        // this.stage.update();
+      }
       ball.vy *= -1
       ball.ay *= -1
-
-      // BREAKOUTRUNNING = false
 
     } else if (other instanceof Paddle) {
       // bounce the ball

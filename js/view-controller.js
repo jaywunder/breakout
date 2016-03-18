@@ -38,6 +38,7 @@ class ViewController {
     createjs.Ticker.removeAllEventListeners()
 
     this.currentView = new ViewType(this.stage)
-    createjs.Ticker.addEventListener("tick", () => this.currentView.tick());
+    createjs.Ticker.addEventListener("tick", () => this.stage.update());
+    setInterval(() => { this.currentView.update() }, 16)
   }
 }

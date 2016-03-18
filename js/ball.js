@@ -24,12 +24,6 @@ class Ball extends Entity {
     })
   }
 
-  render() {
-
-
-    return this;
-  }
-
   update() {
     if (this.isFollowing) {
       this.x = this.paddle.x + (this.paddle.width / 2) - (this.width)
@@ -39,9 +33,5 @@ class Ball extends Entity {
     }
 
     return this;
-  }
-
-  collide(other) {
-
   }
 }
