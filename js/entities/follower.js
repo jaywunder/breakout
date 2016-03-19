@@ -2,7 +2,9 @@
 // jshint -W097
 'use strict';
 
-class Follower extends Entity {
+import Entity from './entity.js'
+
+export default class Follower extends Entity {
   constructor(other) {
     super('follower', {
       x: 0, y: 0

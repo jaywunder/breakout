@@ -2,7 +2,9 @@
 // jshint -W097
 'use strict';
 
-class Brick extends Entity {
+import Entity from './entity.js'
+
+export default class Brick extends Entity {
   constructor(x, y, color) {
     super('brick', {
       x, y,

@@ -2,7 +2,9 @@
 // jshint -W097
 'use strict';
 
-class Paddle extends Entity {
+import Entity from './entity.js'
+
+export default class Paddle extends Entity {
   constructor(yOffset) {
     super('paddle', {
       x: document.getElementById('c').width / 2 - 50,

@@ -3,8 +3,13 @@
 "use strict";
 
 window.BREAKOUTRUNNING = true; // global variable because I'm lazy and dumb
+import Ball from '../entities/ball.js'
+import Brick from '../entities/brick.js'
+import Paddle from '../entities/paddle.js'
+import Follower from '../entities/follower.js'
+import CanvasButton from '../entities/canvas-button.js'
 
-class GameView {
+export default class GameView {
   constructor(stage) {
     this.entities = []
     this.stage = stage
@@ -17,13 +22,20 @@ class GameView {
     $(window).on('key-esc', (event) => {
       BREAKOUTRUNNING = !BREAKOUTRUNNING
     })
+
+    $(document).on('mousedown touchstart', (event) => {
+      var {x, y} = pointerEventToXY(event)
+      // this.movePaddleTo(x, y)
+      this.paddle.x = x
+      console.log('mousedown', x, y);
+    })
   }
 
   createUIElements() {
     let spaceText = new createjs.Text('Press Space to Start', '48px monospace', '#ff7700')
     spaceText.set({
-      x: (this.stage.canvas.width / 2) - (spaceText.getMeasuredWidth() / 2),
-      y: (this.stage.canvas.height / 2) - (spaceText.getMeasuredHeight() / 2)
+      x: this.stage.canvas.width - spaceText.getMeasuredWidth() / 2,
+      y: this.stage.canvas.height - spaceText.getMeasuredHeight() / 2
     })
     this.stage.addChild(spaceText)
 
@@ -31,32 +43,33 @@ class GameView {
       this.stage.removeChild(spaceText)
     })
 
-    let aiButton = new CanvasButton(this.stage, {
-      text: 'AI Player',
-      textColor: '#ff7700',
-      font: '32px monospace',
-      fillColor: 'rgba(0, 0, 0, 0.01)'
-    })
-    aiButton.x = 2 // this.stage.canvas.width - aiButton.textWidth() - 20
-    aiButton.y = 2
-    aiButton.draw()
-    aiButton.onClick(() => {
-      this.onAiButtonClick()
-
-      $(window).trigger('key-space')
-      if (this.aiPlaying) {
-        aiButton.fillColor = 'rgba(0, 0, 0, 0.2)'
-      } else {
-        aiButton.fillColor = 'rgba(0, 0, 0, 0.01)'
-      }
-      aiButton.draw()
-    })
+    // let aiButton = new CanvasButton(this.stage, {
+    //   text: 'AI Player',
+    //   textColor: '#ff7700',
+    //   font: '32px monospace',
+    //   fillColor: 'rgba(0, 0, 0, 0.01)'
+    // })
+    // aiButton.x = 2 // this.stage.canvas.width - aiButton.textWidth() - 20
+    // aiButton.y = 2
+    // aiButton.draw()
+    // aiButton.onClick(() => {
+    //   this.onAiButtonClick()
+    //
+    //   $(window).trigger('key-space')
+    //   if (this.aiPlaying) {
+    //     aiButton.fillColor = 'rgba(0, 0, 0, 0.2)'
+    //   } else {
+    //     aiButton.fillColor = 'rgba(0, 0, 0, 0.01)'
+    //   }
+    //   aiButton.draw()
+    // })
   }
 
   createEntitites() {
     let yOffset = this.stage.canvas.height / 8
-    this.entities.push(new Paddle(yOffset))
-    this.entities.push(new Ball(0, 200, this.entities[0]))
+    this.paddle = new Paddle(yOffset)
+    this.entities.push(this.paddle)
+    this.entities.push(new Ball(0, 200, this.paddle))
 
     let blocksWidth = this.stage.canvas.width / 80
 
@@ -248,4 +261,19 @@ class GameView {
 
     BREAKOUTRUNNING = false
   }
+}
+
+
+// http://stackoverflow.com/a/16284281
+function pointerEventToXY (e){
+  var out = {x:0, y:0};
+  if(e.type == 'touchstart' || e.type == 'touchmove' || e.type == 'touchend' || e.type == 'touchcancel'){
+    var touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
+    out.x = touch.pageX;
+    out.y = touch.pageY;
+  } else if (e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove' || e.type == 'mouseover'|| e.type=='mouseout' || e.type=='mouseenter' || e.type=='mouseleave') {
+    out.x = e.pageX;
+    out.y = e.pageY;
+  }
+  return out;
 }

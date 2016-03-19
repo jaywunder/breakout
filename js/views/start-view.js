@@ -2,7 +2,7 @@
 // jshint -W097
 'use strict';
 
-class StartView {
+export default class StartView {
   constructor(stage) {
     this.stage = stage
     this.textColor = '#ff7700'

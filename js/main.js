@@ -2,6 +2,8 @@
 // jshint -W097
 'use strict';
 
+import ViewController from './view-controller.js'
+
 window.addEventListener('keydown', (event) => {
   // console.log(event.which);
   switch (event.which) {

@@ -2,7 +2,7 @@
 // jshint -W097
 'use strict'
 
-class Entity {
+export default class Entity {
   constructor(type, opts) {
     this.type = type
     this.id = this.type + '#' + (Math.floor(Math.random() * 10000))

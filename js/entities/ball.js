@@ -2,7 +2,9 @@
 // jshint -W097
 'use strict';
 
-class Ball extends Entity {
+import Entity from './entity.js'
+
+export default class Ball extends Entity {
   constructor(x, y, paddle) {
     super('ball', {
       x, y,

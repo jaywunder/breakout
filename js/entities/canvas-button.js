@@ -2,7 +2,7 @@
 // jshint -W097
 'use strict';
 
-class CanvasButton {
+export default class CanvasButton {
   constructor(parent, args) {
     this.parent      = parent
     this.textColor   = args.textColor || '#FFFFFF'
