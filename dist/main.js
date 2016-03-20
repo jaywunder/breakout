@@ -51,7 +51,7 @@ var Ball = function (_Entity) {
       var ballTexture = new PIXI.Texture.fromImage('assets/ball.png');
       var ballSprite = new PIXI.Sprite(ballTexture);
       var scale = ballSprite.width / this.width;
-      ballSprite.scale.set(scale * 2);
+      ballSprite.scale.set(scale * 3);
       ballSprite.tint = 0x000000;
       this.body.addChild(ballSprite);
     }
@@ -404,7 +404,7 @@ var Paddle = function (_Entity) {
       for (var i = 0; i < this.width; i += 10) {
         var paddleSprite = new PIXI.Sprite(paddleTexture);
         paddleSprite.x = i;
-        paddleSprite.tint = '0xaaaaaa';
+        paddleSprite.tint = 0x000000;
         this.body.addChild(paddleSprite);
       }
     }

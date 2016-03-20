@@ -23,7 +23,7 @@ export default class Paddle extends Entity {
     for (let i = 0; i < this.width; i += 10){
       let paddleSprite = new PIXI.Sprite(paddleTexture)
       paddleSprite.x = i
-      paddleSprite.tint = '0xaaaaaa'
+      paddleSprite.tint = 0x000000
       this.body.addChild(paddleSprite)
     }
   }

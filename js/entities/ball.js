@@ -26,7 +26,7 @@ export default class Ball extends Entity {
     let ballTexture = new PIXI.Texture.fromImage('assets/ball.png')
     let ballSprite = new PIXI.Sprite(ballTexture)
     let scale = ballSprite.width / this.width
-    ballSprite.scale.set(scale * 2)
+    ballSprite.scale.set(scale * 3)
     ballSprite.tint = 0x000000
     this.body.addChild(ballSprite)
   }
