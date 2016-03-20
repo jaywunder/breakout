@@ -8,7 +8,6 @@ module.exports = function(grunt) {
           transform: [
             ["babelify", {
               sourceMaps: true
-              // sourceType: 'module'
             }]
           ]
         },
@@ -19,7 +18,7 @@ module.exports = function(grunt) {
     },
     watch: {
       scripts: {
-        files: ['js/**/**.js'],
+        files: ['js/**'],
         tasks: ['browserify'],
         options: {
           livereload: 1337,

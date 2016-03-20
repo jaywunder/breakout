@@ -7,36 +7,39 @@ import Ball from '../entities/ball.js'
 import Brick from '../entities/brick.js'
 import Paddle from '../entities/paddle.js'
 import Follower from '../entities/follower.js'
-import CanvasButton from '../entities/canvas-button.js'
+import CanvasButton from '../ui/canvas-button.js'
+import View from './view.js'
 
-export default class GameView {
-  constructor(stage) {
-    this.entities = []
-    this.stage = stage
+export default class GameView  extends View {
+  constructor(stage, renderer) {
+    super(stage, renderer)
     this.aiWorker = null
     this.aiPlaying = false
+    // console.log('things are happening');
 
     this.createUIElements()
     this.createEntitites()
 
-    $(window).on('key-esc', (event) => {
-      BREAKOUTRUNNING = !BREAKOUTRUNNING
-    })
+    $(window).on('key-esc', (event) => { BREAKOUTRUNNING = !BREAKOUTRUNNING })
 
-    $(document).on('mousedown touchstart', (event) => {
+    $(document).on('mousemove touchstart', (event) => {
       var {x, y} = pointerEventToXY(event)
-      // this.movePaddleTo(x, y)
-      this.paddle.x = x
-      console.log('mousedown', x, y);
+      if (this.paddle) this.paddle.x = x
     })
   }
 
   createUIElements() {
-    let spaceText = new createjs.Text('Press Space to Start', '48px monospace', '#ff7700')
-    spaceText.set({
-      x: this.stage.canvas.width - spaceText.getMeasuredWidth() / 2,
-      y: this.stage.canvas.height - spaceText.getMeasuredHeight() / 2
+    let spaceText = new PIXI.Text('Press Space to Start', {
+      font: '48px monospace',
+      fill: '#ff7700',
+      align: 'center'
     })
+
+    spaceText.position.set(
+      (window.innerWidth - spaceText.width) / 2,
+      (window.innerHeight - spaceText.height) / 2
+    )
+
     this.stage.addChild(spaceText)
 
     $(window).one('key-space', (event) => {
@@ -49,7 +52,7 @@ export default class GameView {
     //   font: '32px monospace',
     //   fillColor: 'rgba(0, 0, 0, 0.01)'
     // })
-    // aiButton.x = 2 // this.stage.canvas.width - aiButton.textWidth() - 20
+    // aiButton.x = 2 // this.view.width - aiButton.textWidth() - 20
     // aiButton.y = 2
     // aiButton.draw()
     // aiButton.onClick(() => {
@@ -66,14 +69,14 @@ export default class GameView {
   }
 
   createEntitites() {
-    let yOffset = this.stage.canvas.height / 8
+    let yOffset = this.view.height / 8
     this.paddle = new Paddle(yOffset)
     this.entities.push(this.paddle)
-    this.entities.push(new Ball(0, 200, this.paddle))
+    this.entities.push(new Ball(0, 0, this.paddle))
 
-    let blocksWidth = this.stage.canvas.width / 80
+    let blocksWidth = this.view.width / 80
 
-    let colors = [ "#e82014", "#ee8d0b", "#ddd51a", "#1bda23", "#145edf" ]
+    let colors = [ 0xe82014, 0xee8d0b, 0xddd51a, 0x1bda23, 0x145edf ]
     for (let x = 0; x < blocksWidth; x++) {
       for (let y = 0; y < 5; y++) {
         this.entities.push(new Brick(x * 80, y * 40 + yOffset, colors[y]))
@@ -104,10 +107,10 @@ export default class GameView {
     this.aiWorker.postMessage('ping')
   }
 
-  tick() {
+  update() {
     this.checkEdges()
 
-    // update, render, and move all entities
+    // update and move all entities
     if (BREAKOUTRUNNING) {
       this.checkCollisions()
 
@@ -122,22 +125,18 @@ export default class GameView {
       for (let i in this.entities) {
         this.entities[i]
           .update()
-          // .render()
           .move();
       }
     }
-
-    this.stage.update();
   }
 
   checkEdges() {
-    let canvas = this.stage.canvas;
 
     for (let i in this.entities) {
       let entity = this.entities[i]
 
-      if (entity.x + entity.width > canvas.width){
-        entity.x = canvas.width - entity.width
+      if (entity.x + entity.width > this.view.width){
+        entity.x = this.view.width - entity.width
         entity.vx *= -1
       } else if (entity.x < 0) {
         entity.x = 0
@@ -145,10 +144,10 @@ export default class GameView {
       } else if (entity.y < 0){
         entity.y = 0
         entity.vy *= -1
-      } else if (entity.y + entity.height > canvas.height){
-        entity.y = canvas.height - entity.height
+      } else if (entity.y + entity.height > this.view.height){
+        entity.y = this.view.height - entity.height
         entity.vy *= -1
-        if (entity instanceof Ball) this.end()
+        if (entity instanceof Ball) this.endGame()
       }
     }
   }
@@ -227,18 +226,18 @@ export default class GameView {
     }
   }
 
-  end() {
+  endGame() {
     // End Game Text
     let text = new createjs.Text("Game Over", "72px monospace", "#ff7700");
     let bounds = text.getBounds()
-    text.x = (this.stage.canvas.width / 2) - (bounds.width / 2);
-    text.y = (this.stage.canvas.height / 2) - (bounds.height * 3);
+    text.x = (this.view.width / 2) - (bounds.width / 2);
+    text.y = (this.view.height / 2) - (bounds.height * 3);
     text.textBaseline = "alphabetic";
     this.stage.addChild(text)
 
     // UI Buttons
-    let centerX = this.stage.canvas.width / 2
-    let centerY = this.stage.canvas.height / 2
+    let centerX = this.view.width / 2
+    let centerY = this.view.height / 2
     let restartButton = new CanvasButton(this.stage, {
       text: 'Restart',
       textColor: '#ff7700',
