@@ -15,7 +15,9 @@ export default class Entity {
     this.maxVel = opts.maxVel || 15;
     this.maxAcc = opts.maxAcc || 1;
 
-    this.body = new createjs.Shape();
+    this.body = new PIXI.Container();
+
+    this.createBody()
   }
 
   get x() { return this.pos[0] }

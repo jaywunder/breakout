@@ -11,13 +11,21 @@ export default class Brick extends Entity {
       width: 80, height: 40,
       maxVel: 0, maxAcc: 0
     })
-
-    this.body.graphics
-      .beginFill(color || '#000000')
-      .drawRect(this.x, this.y, this.width, this.height)
+    this.color = color
+    this.brickSprite.tint = this.color
   }
 
-  move() { return this } // bricks dont move haha
+  createBody() {
+    let brickTexture = new PIXI.Texture.fromImage('assets/brick.png')
+    this.brickSprite = new PIXI.Sprite(brickTexture)
+    this.body.addChild(this.brickSprite)
+  }
+
+  move() {
+    this.body.x = this.x;
+    this.body.y = this.y;
+    return this
+  } // bricks dont move haha
 
   collide(other) {
     this.acc = [0, 0]
