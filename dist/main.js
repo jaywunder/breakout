@@ -36,8 +36,7 @@ var Ball = function (_Entity) {
     _this.paddle = paddle;
     _this.isFollowing = true;
 
-    // TODO: change to "$(window).one"
-    $(window).one('key-space', function () {
+    $(window).one('key-space touchstart', function () {
       _this.isFollowing = false;
       _this.vx = _this.paddle.vx;
       _this.vy = -15;
@@ -50,8 +49,8 @@ var Ball = function (_Entity) {
     value: function createBody() {
       var ballTexture = new PIXI.Texture.fromImage('assets/ball.png');
       var ballSprite = new PIXI.Sprite(ballTexture);
-      var scale = ballSprite.width / this.width;
-      ballSprite.scale.set(scale * 3);
+      var scale = this.width / ballSprite.width;
+      ballSprite.scale.set(scale);
       ballSprite.tint = 0x000000;
       this.body.addChild(ballSprite);
     }
@@ -515,92 +514,65 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+var scaleX = 1;
+function sX(x) {
+  return x * scaleX;
+}
+
+var scaleY = 1;
+function sY(y) {
+  return y * scaleX;
+}
+
 var CanvasButton = function () {
-  function CanvasButton(parent, args) {
+  function CanvasButton(args) {
     _classCallCheck(this, CanvasButton);
 
-    this.parent = parent;
-    this.textColor = args.textColor || '#FFFFFF';
+    args = args || {};
     this.x = args.x || 0;
     this.y = args.y || 0;
     this.text = args.text || 'Sample Text';
-    this._centeredX = args.centeredX || false;
-    this._centeredY = args.centeredY || false;
     this.font = args.font || '32px monospace';
-    this.fillColor = args.fillColor || 'rgba(0, 0, 0, 0.1)';
-    this.strokeWidth = args.strokeWidth || 5;
-    this.capStyle = args.capStyle || 'round';
+    this.textFill = args.textFill || 0; // 0xffffff
+    this.tintOn = args.tintOn || 0xff7700;
+    this.tintOff = args.tintOff || 0xe64703;
 
-    this.border = new createjs.Shape();
-    this.text = new createjs.Text(this.text, this.font, this.textColor);
-    this.bounds = this.text.getBounds();
+    this.body = new PIXI.Container();
+    var text = new PIXI.Text(this.text, { fill: this.textFill });
+    var left = new PIXI.Sprite.fromImage('assets/button-left.png');
+    var right = new PIXI.Sprite.fromImage('assets/button-right.png');
+    var middle = PIXI.Texture.fromImage('assets/button-middle.png');
 
-    this.draw();
-    return this;
+    left.tint = this.tintOn;
+    right.tint = this.tintOn;
+    this.body.addChild(left);
+
+    var scaleX = text.width / left.width * 1.2;
+    var scaleY = text.height / left.height * 1.2;
+    // 200 is the width of the middle piece image
+    // 100 is the width of the left and right curves
+    for (var i = 100 * scaleX / 10; i < text.width; i += 200 * scaleX) {
+      // console.log(i);
+      var piece = new PIXI.Sprite(middle);
+      piece.tint = this.tintOn;
+      piece.position.set(this.x + i, this.y);
+      piece.scale.set(scaleX, scaleY);
+      this.body.addChild(piece);
+    }
+    left.position.x = -100 * scaleX / 10;
+    right.position.x = text.width + 400 * (scaleX / 10);
+    text.position.x = (right.position.x - left.position.x) / 2 - text.width / 2;
+    this.body.addChild(right);
+    this.body.addChild(text);
+
+    left.scale.set(scaleX / 10, scaleY);
+    right.scale.set(scaleX / 10, scaleY);
   }
 
   _createClass(CanvasButton, [{
     key: 'onClick',
     value: function onClick(func) {
       this.border.addEventListener('click', func);
-    }
-  }, {
-    key: 'draw',
-    value: function draw() {
-      this.parent.removeChild(this.text);
-      if (this._centeredX) {
-        this.text.x = document.getElementById('c').width / 2 - this.text.getMeasuredWidth() * 1.25;
-      } else {
-        this.text.x = this.x; // - (this.text.getMeasuredWidth() * 1.25)
-      }
-
-      if (this._centeredY) {
-        this.text.y = document.getElementById('c').height / 2 - this.text.getMeasuredHeight() * 1.25;
-      } else {
-        this.text.y = this.y; // - (this.text.getMeasuredHeight() * 1.25)
-      }
-
-      this.border.graphics.clear();
-      this.border.graphics.s(this.textColor).f(this.fillColor).ss(this.strokeWidth, this.capStyle).rr(this.text.x - 15, this.text.y + 5, this.text.getMeasuredWidth() + 30, this.text.getMeasuredHeight() + 15, 3, 3, 3, 3 // CHANGE ROUNDED CORNERS HERE IF YOU NEED TO IN THE FUTURE
-      );
-
-      this.parent.addChild(this.border);
-      this.parent.addChild(this.text);
-      this.parent.update();
-    }
-  }, {
-    key: 'textWidth',
-    value: function textWidth() {
-      return this.text.getMeasuredWidth();
-    }
-  }, {
-    key: 'textHeight',
-    value: function textHeight() {
-      return this.text.getMeasuredHeight();
-    }
-  }, {
-    key: 'centeredX',
-    value: function centeredX() {
-      this._centeredX = true;
-      return this;
-    }
-  }, {
-    key: 'uncenteredX',
-    value: function uncenteredX() {
-      this._centeredX = false;
-      return this;
-    }
-  }, {
-    key: 'centeredY',
-    value: function centeredY() {
-      this._centeredY = true;
-      return this;
-    }
-  }, {
-    key: 'uncenteredY',
-    value: function uncenteredY() {
-      this._centeredY = false;
-      return this;
     }
   }]);
 
@@ -634,36 +606,59 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var ViewController = function () {
   function ViewController() {
-    var _this = this;
-
     _classCallCheck(this, ViewController);
 
-    this.renderer = PIXI.autoDetectRenderer(window.innerWidth, window.innerHeight, { backgroundColor: 0xffffff });
+    this.stage = new PIXI.Container();
+    this.renderer = PIXI.autoDetectRenderer(window.innerWidth, window.innerHeight, {
+      backgroundColor: 0xffffff
+    });
     document.body.appendChild(this.renderer.view);
 
-    this.stage = new PIXI.Container();
-
-    setInterval(function () {
-      _this.currentView.update();
-    }, 1000 / 60);
-    this.currentView = new _gameView2.default(this.stage, this.renderer);
-
-    $(window).on('transition', function (event, ViewType) {
-      return _this.transition(ViewType);
-    });
-
+    this.loadAssets();
     // TODO: Handle Resizing
-
-    this.render();
   }
 
   _createClass(ViewController, [{
-    key: 'render',
-    value: function render() {
+    key: 'loadAssets',
+    value: function loadAssets() {
+      var _this = this;
+
+      var loader = new PIXI.loaders.Loader();
+
+      loader.add('ball', 'assets/ball.png');
+      loader.add('brick', 'assets/brick.png');
+      loader.add('bunny', 'assets/bunny.png');
+      loader.add('button-left', 'assets/button-left.png');
+      loader.add('button-right', 'assets/button-right.png');
+      loader.add('button-middle', 'assets/button-middle.png');
+      loader.add('paddle-piece', 'assets/paddle-piece.png');
+      loader.once('complete', function () {
+        return _this.onAssetsLoaded();
+      });
+      loader.load();
+    }
+  }, {
+    key: 'onAssetsLoaded',
+    value: function onAssetsLoaded() {
       var _this2 = this;
 
+      this.currentView = new _gameView2.default(this.stage, this.renderer);
+      setInterval(function () {
+        _this2.currentView.update();
+      }, 1000 / 60);
+      $(window).on('transition', function (event, ViewType) {
+        return _this2.transition(ViewType);
+      });
+
+      this.render();
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      var _this3 = this;
+
       requestAnimationFrame(function () {
-        return _this2.render();
+        return _this3.render();
       });
       this.renderer.render(this.stage);
     }
@@ -707,9 +702,9 @@ var _follower = require('../entities/follower.js');
 
 var _follower2 = _interopRequireDefault(_follower);
 
-var _canvasButton = require('../ui/canvas-button.js');
+var _button = require('../ui/button.js');
 
-var _canvasButton2 = _interopRequireDefault(_canvasButton);
+var _button2 = _interopRequireDefault(_button);
 
 var _view = require('./view.js');
 
@@ -735,10 +730,12 @@ var GameView = function (_View) {
 
     _this.aiWorker = null;
     _this.aiPlaying = false;
-    // console.log('things are happening');
 
     _this.createUIElements();
     _this.createEntitites();
+
+    var aiButton = new _button2.default({});
+    _this.stage.addChild(aiButton.body);
 
     $(window).on('key-esc', function (event) {
       BREAKOUTRUNNING = !BREAKOUTRUNNING;
@@ -750,7 +747,7 @@ var GameView = function (_View) {
       var x = _pointerEventToXY.x;
       var y = _pointerEventToXY.y;
 
-      if (_this.paddle) _this.paddle.x = x;
+      if (_this.paddle) _this.paddle.x = x - _this.paddle.width / 2;
     });
     return _this;
   }
@@ -774,15 +771,8 @@ var GameView = function (_View) {
         _this2.stage.removeChild(spaceText);
       });
 
-      // let aiButton = new CanvasButton(this.stage, {
-      //   text: 'AI Player',
-      //   textColor: '#ff7700',
-      //   font: '32px monospace',
-      //   fillColor: 'rgba(0, 0, 0, 0.01)'
-      // })
-      // aiButton.x = 2 // this.view.width - aiButton.textWidth() - 20
-      // aiButton.y = 2
-      // aiButton.draw()
+      // let aiButton = new CanvasButton({})
+      // this.stage.addChild(aiButton.body)
       // aiButton.onClick(() => {
       //   this.onAiButtonClick()
       //
@@ -966,7 +956,7 @@ var GameView = function (_View) {
       // UI Buttons
       var centerX = this.view.width / 2;
       var centerY = this.view.height / 2;
-      var restartButton = new _canvasButton2.default(this.stage, {
+      var restartButton = new _button2.default(this.stage, {
         text: 'Restart',
         textColor: '#ff7700',
         font: '48px monospace'
@@ -978,7 +968,7 @@ var GameView = function (_View) {
         return $(window).trigger('transition', GameView);
       });
 
-      var homeButton = new _canvasButton2.default(this.stage, {
+      var homeButton = new _button2.default(this.stage, {
         text: 'Home',
         textColor: '#ff7700',
         font: '48px monospace'
@@ -1014,7 +1004,7 @@ function pointerEventToXY(e) {
   return out;
 }
 
-},{"../entities/ball.js":1,"../entities/brick.js":2,"../entities/follower.js":4,"../entities/paddle.js":5,"../ui/canvas-button.js":7,"./view.js":11}],10:[function(require,module,exports){
+},{"../entities/ball.js":1,"../entities/brick.js":2,"../entities/follower.js":4,"../entities/paddle.js":5,"../ui/button.js":7,"./view.js":11}],10:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 'use strict';

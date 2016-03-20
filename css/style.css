@@ -10,7 +10,7 @@
 }
 canvas {
   display: block;
-  cursor: none !important; 
+  /*cursor: none !important; */
 }
 
 .pink {

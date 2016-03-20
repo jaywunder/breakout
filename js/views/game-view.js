@@ -7,7 +7,7 @@ import Ball from '../entities/ball.js'
 import Brick from '../entities/brick.js'
 import Paddle from '../entities/paddle.js'
 import Follower from '../entities/follower.js'
-import CanvasButton from '../ui/canvas-button.js'
+import CanvasButton from '../ui/button.js'
 import View from './view.js'
 
 export default class GameView  extends View {
@@ -15,16 +15,18 @@ export default class GameView  extends View {
     super(stage, renderer)
     this.aiWorker = null
     this.aiPlaying = false
-    // console.log('things are happening');
 
     this.createUIElements()
     this.createEntitites()
+
+    let aiButton = new CanvasButton({})
+    this.stage.addChild(aiButton.body)
 
     $(window).on('key-esc', (event) => { BREAKOUTRUNNING = !BREAKOUTRUNNING })
 
     $(document).on('mousemove touchstart', (event) => {
       var {x, y} = pointerEventToXY(event)
-      if (this.paddle) this.paddle.x = x
+      if (this.paddle) this.paddle.x = x - this.paddle.width / 2
     })
   }
 
@@ -46,15 +48,9 @@ export default class GameView  extends View {
       this.stage.removeChild(spaceText)
     })
 
-    // let aiButton = new CanvasButton(this.stage, {
-    //   text: 'AI Player',
-    //   textColor: '#ff7700',
-    //   font: '32px monospace',
-    //   fillColor: 'rgba(0, 0, 0, 0.01)'
-    // })
-    // aiButton.x = 2 // this.view.width - aiButton.textWidth() - 20
-    // aiButton.y = 2
-    // aiButton.draw()
+
+    // let aiButton = new CanvasButton({})
+    // this.stage.addChild(aiButton.body)
     // aiButton.onClick(() => {
     //   this.onAiButtonClick()
     //
