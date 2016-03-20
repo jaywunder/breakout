@@ -2,7 +2,7 @@
 // jshint -W097
 'use strict';
 
-class CanvasButton {
+export default class CanvasButton {
   constructor(parent, args) {
     this.parent      = parent
     this.textColor   = args.textColor || '#FFFFFF'
@@ -11,7 +11,7 @@ class CanvasButton {
     this.text        = args.text || 'Sample Text'
     this._centeredX  = args.centeredX || false
     this._centeredY  = args.centeredY || false
-    this.font        = args.font || '12px Cursive'
+    this.font        = args.font || '32px monospace'
     this.fillColor   = args.fillColor || 'rgba(0, 0, 0, 0.1)'
     this.strokeWidth = args.strokeWidth || 5
     this.capStyle    = args.capStyle || 'round'

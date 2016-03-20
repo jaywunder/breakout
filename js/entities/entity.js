@@ -2,7 +2,7 @@
 // jshint -W097
 'use strict'
 
-class Entity {
+export default class Entity {
   constructor(type, opts) {
     this.type = type
     this.id = this.type + '#' + (Math.floor(Math.random() * 10000))
@@ -15,7 +15,9 @@ class Entity {
     this.maxVel = opts.maxVel || 15;
     this.maxAcc = opts.maxAcc || 1;
 
-    this.body = new createjs.Shape();
+    this.body = new PIXI.Container();
+
+    this.createBody()
   }
 
   get x() { return this.pos[0] }

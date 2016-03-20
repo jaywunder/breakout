@@ -2,43 +2,38 @@
 // jshint -W097
 'use strict';
 
-class ViewController {
+import GameView from './views/game-view.js'
+import StartView from './views/start-view.js'
+
+export default class ViewController {
   constructor() {
 
-    this.stage = new createjs.Stage("c");
-    this.stage.canvas.width = window.innerWidth;
-    this.stage.canvas.height = window.innerHeight;
+    this.renderer = PIXI.autoDetectRenderer(
+      window.innerWidth, window.innerHeight, { backgroundColor : 0xffffff }
+    );
+    document.body.appendChild(this.renderer.view);
 
-    // var circle = new createjs.Shape();
-    // circle.graphics
-    //   .beginFill("AliceBlue")
-    //   .drawCircle(0, 0, 50);
-    // this.stage.addChild(circle);
+    this.stage = new PIXI.Container();
 
-    this.currentView = new GameView(this.stage)
-
-    createjs.Ticker.addEventListener("tick", () =>
-      this.currentView.tick()
-    )
+    setInterval(() => { this.currentView.update() }, 1000 / 60)
+    this.currentView = new GameView(this.stage, this.renderer)
 
     $(window).on('transition', (event, ViewType) =>
       this.transition(ViewType)
     )
 
-    $(window).resize(() => {
-      this.stage.canvas.width = window.innerWidth;
-      this.stage.canvas.height = window.innerHeight;
-      this.stage.update();
-    })
+    // TODO: Handle Resizing
 
+    this.render()
+  }
+
+  render() {
+    requestAnimationFrame( () => this.render() )
+    this.renderer.render(this.stage);
   }
 
   transition(ViewType) {
     this.stage.removeAllChildren()
-    createjs.Ticker.removeAllEventListeners()
-
     this.currentView = new ViewType(this.stage)
-    createjs.Ticker.addEventListener("tick", () => this.stage.update());
-    setInterval(() => { this.currentView.update() }, 16)
   }
 }

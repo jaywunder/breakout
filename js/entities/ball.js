@@ -2,7 +2,9 @@
 // jshint -W097
 'use strict';
 
-class Ball extends Entity {
+import Entity from './entity.js'
+
+export default class Ball extends Entity {
   constructor(x, y, paddle) {
     super('ball', {
       x, y,
@@ -12,16 +14,21 @@ class Ball extends Entity {
     this.paddle = paddle
     this.isFollowing = true
 
-    this.body.graphics
-      .beginFill("#dd520d")
-      .drawCircle(this.width / 2, this.width / 2, this.width)
-
     // TODO: change to "$(window).one"
-    $(window).on('key-space', () => {
+    $(window).one('key-space', () => {
       this.isFollowing = false
       this.vx = this.paddle.vx
       this.vy = -15
     })
+  }
+
+  createBody() {
+    let ballTexture = new PIXI.Texture.fromImage('assets/ball.png')
+    let ballSprite = new PIXI.Sprite(ballTexture)
+    let scale = ballSprite.width / this.width
+    ballSprite.scale.set(scale * 3)
+    ballSprite.tint = 0x000000
+    this.body.addChild(ballSprite)
   }
 
   update() {
@@ -31,7 +38,6 @@ class Ball extends Entity {
       this.acc = [0, 0]
       this.vel = [0, 0]
     }
-
     return this;
   }
 }
