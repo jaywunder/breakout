@@ -772,7 +772,7 @@ var GameView = function (_View) {
       BREAKOUTRUNNING = !BREAKOUTRUNNING;
     });
 
-    $(document).on('mousemove touchstart', function (event) {
+    $(document).on('mousemove touchstart touchmove', function (event) {
       var _pointerEventToXY = pointerEventToXY(event);
 
       var x = _pointerEventToXY.x;
