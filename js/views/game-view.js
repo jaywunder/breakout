@@ -24,7 +24,7 @@ export default class GameView  extends View {
 
     $(window).on('key-esc', (event) => { BREAKOUTRUNNING = !BREAKOUTRUNNING })
 
-    $(document).on('mousemove touchstart', (event) => {
+    $(document).on('mousemove touchstart touchmove', (event) => {
       var {x, y} = pointerEventToXY(event)
       if (this.paddle) this.paddle.x = x - this.paddle.width / 2
     })
