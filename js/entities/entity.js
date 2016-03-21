@@ -40,6 +40,8 @@ export default class Entity {
   set width(value)  { this.size[0] = value }
   set height(value) { this.size[1] = value }
 
+  createBody() {}
+
   render() {
 
 

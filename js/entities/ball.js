@@ -14,8 +14,7 @@ export default class Ball extends Entity {
     this.paddle = paddle
     this.isFollowing = true
 
-    // TODO: change to "$(window).one"
-    $(window).one('key-space', () => {
+    $(window).one('key-space touchstart', () => {
       this.isFollowing = false
       this.vx = this.paddle.vx
       this.vy = -15
@@ -25,8 +24,8 @@ export default class Ball extends Entity {
   createBody() {
     let ballTexture = new PIXI.Texture.fromImage('assets/ball.png')
     let ballSprite = new PIXI.Sprite(ballTexture)
-    let scale = ballSprite.width / this.width
-    ballSprite.scale.set(scale * 3)
+    let scale = this.width / ballSprite.width
+    ballSprite.scale.set(scale)
     ballSprite.tint = 0x000000
     this.body.addChild(ballSprite)
   }
