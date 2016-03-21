@@ -2,24 +2,23 @@
 // jshint -W097
 'use strict';
 
-var scaleX = 1
-function sX(x) { return x * scaleX }
+import Entity from '../entities/entity.js';
 
-var scaleY = 1
-function sY(y) { return y * scaleX }
 
-export default class CanvasButton {
+export default class CanvasButton extends Entity {
   constructor(args) {
+    super('', {})
     args = args || {}
     this.x         = args.x || 0
     this.y         = args.y || 0
     this.text      = args.text || 'Sample Text'
     this.font      = args.font || '32px monospace'
-    this.textFill  = args.textFill || 0 // 0xffffff
+    this.textFill  = args.textFill || 0xffffff
     this.tintOn    = args.tintOn || 0xff7700
     this.tintOff   = args.tintOff || 0xe64703
 
-    this.body = new PIXI.Container()
+    this.listeners = []
+
     let text = new PIXI.Text(this.text, { fill : this.textFill })
     let left = new PIXI.Sprite.fromImage('assets/button-left.png')
     let right = new PIXI.Sprite.fromImage('assets/button-right.png')
@@ -49,9 +48,21 @@ export default class CanvasButton {
 
     left.scale.set(scaleX / 10, scaleY)
     right.scale.set(scaleX / 10, scaleY)
+
+    for (let i in this.body.children) {
+      let child = this.body.children[i]
+      child.interactive = true;
+      child.on('mousedown', (event) => {
+        for ( let i in this.listeners ) this.listeners[i](event)
+      })
+
+      child.on('touchstart', (event) => {
+        for ( let i in this.listeners ) this.listeners[i](event)
+      })
+    }
   }
 
   onClick(func) {
-    this.border.addEventListener('click', func)
+    this.listeners.push(func)
   }
 }

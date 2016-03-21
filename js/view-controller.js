@@ -45,7 +45,13 @@ export default class ViewController {
   }
 
   transition(ViewType) {
-    this.stage.removeAllChildren()
-    this.currentView = new ViewType(this.stage)
+    // console.log(this.stage.children.length);
+    // for (let i in this.stage.children) {
+    //   console.log(i);
+    //   this.stage.removeChild(this.stage.children[i])
+    // }
+    // console.log(this.stage.children.length);
+    this.stage.children = []
+    this.currentView = new ViewType(this.stage, this.renderer)
   }
 }

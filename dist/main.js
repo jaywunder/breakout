@@ -178,6 +178,9 @@ var Entity = function () {
   }
 
   _createClass(Entity, [{
+    key: 'createBody',
+    value: function createBody() {}
+  }, {
     key: 'render',
     value: function render() {
 
@@ -512,40 +515,45 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _entity = require('../entities/entity.js');
+
+var _entity2 = _interopRequireDefault(_entity);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var scaleX = 1;
-function sX(x) {
-  return x * scaleX;
-}
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
-var scaleY = 1;
-function sY(y) {
-  return y * scaleX;
-}
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var CanvasButton = function () {
+var CanvasButton = function (_Entity) {
+  _inherits(CanvasButton, _Entity);
+
   function CanvasButton(args) {
     _classCallCheck(this, CanvasButton);
 
-    args = args || {};
-    this.x = args.x || 0;
-    this.y = args.y || 0;
-    this.text = args.text || 'Sample Text';
-    this.font = args.font || '32px monospace';
-    this.textFill = args.textFill || 0; // 0xffffff
-    this.tintOn = args.tintOn || 0xff7700;
-    this.tintOff = args.tintOff || 0xe64703;
+    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(CanvasButton).call(this, '', {}));
 
-    this.body = new PIXI.Container();
-    var text = new PIXI.Text(this.text, { fill: this.textFill });
+    args = args || {};
+    _this.x = args.x || 0;
+    _this.y = args.y || 0;
+    _this.text = args.text || 'Sample Text';
+    _this.font = args.font || '32px monospace';
+    _this.textFill = args.textFill || 0xffffff;
+    _this.tintOn = args.tintOn || 0xff7700;
+    _this.tintOff = args.tintOff || 0xe64703;
+
+    _this.listeners = [];
+
+    var text = new PIXI.Text(_this.text, { fill: _this.textFill });
     var left = new PIXI.Sprite.fromImage('assets/button-left.png');
     var right = new PIXI.Sprite.fromImage('assets/button-right.png');
     var middle = PIXI.Texture.fromImage('assets/button-middle.png');
 
-    left.tint = this.tintOn;
-    right.tint = this.tintOn;
-    this.body.addChild(left);
+    left.tint = _this.tintOn;
+    right.tint = _this.tintOn;
+    _this.body.addChild(left);
 
     var scaleX = text.width / left.width * 1.2;
     var scaleY = text.height / left.height * 1.2;
@@ -554,34 +562,51 @@ var CanvasButton = function () {
     for (var i = 100 * scaleX / 10; i < text.width; i += 200 * scaleX) {
       // console.log(i);
       var piece = new PIXI.Sprite(middle);
-      piece.tint = this.tintOn;
-      piece.position.set(this.x + i, this.y);
+      piece.tint = _this.tintOn;
+      piece.position.set(_this.x + i, _this.y);
       piece.scale.set(scaleX, scaleY);
-      this.body.addChild(piece);
+      _this.body.addChild(piece);
     }
     left.position.x = -100 * scaleX / 10;
     right.position.x = text.width + 400 * (scaleX / 10);
     text.position.x = (right.position.x - left.position.x) / 2 - text.width / 2;
-    this.body.addChild(right);
-    this.body.addChild(text);
+    _this.body.addChild(right);
+    _this.body.addChild(text);
 
     left.scale.set(scaleX / 10, scaleY);
     right.scale.set(scaleX / 10, scaleY);
+
+    for (var _i in _this.body.children) {
+      var child = _this.body.children[_i];
+      child.interactive = true;
+      child.on('mousedown', function (event) {
+        for (var _i2 in _this.listeners) {
+          _this.listeners[_i2](event);
+        }
+      });
+
+      child.on('touchstart', function (event) {
+        for (var _i3 in _this.listeners) {
+          _this.listeners[_i3](event);
+        }
+      });
+    }
+    return _this;
   }
 
   _createClass(CanvasButton, [{
     key: 'onClick',
     value: function onClick(func) {
-      this.border.addEventListener('click', func);
+      this.listeners.push(func);
     }
   }]);
 
   return CanvasButton;
-}();
+}(_entity2.default);
 
 exports.default = CanvasButton;
 
-},{}],8:[function(require,module,exports){
+},{"../entities/entity.js":3}],8:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 'use strict';
@@ -665,8 +690,14 @@ var ViewController = function () {
   }, {
     key: 'transition',
     value: function transition(ViewType) {
-      this.stage.removeAllChildren();
-      this.currentView = new ViewType(this.stage);
+      // console.log(this.stage.children.length);
+      // for (let i in this.stage.children) {
+      //   console.log(i);
+      //   this.stage.removeChild(this.stage.children[i])
+      // }
+      // console.log(this.stage.children.length);
+      this.stage.children = [];
+      this.currentView = new ViewType(this.stage, this.renderer);
     }
   }]);
 
@@ -728,14 +759,14 @@ var GameView = function (_View) {
 
     var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(GameView).call(this, stage, renderer));
 
+    BREAKOUTRUNNING = true;
     _this.aiWorker = null;
     _this.aiPlaying = false;
+    _this.bricksTotal = 0;
+    _this.bricksKilled = 0;
 
     _this.createUIElements();
     _this.createEntitites();
-
-    var aiButton = new _button2.default({});
-    _this.stage.addChild(aiButton.body);
 
     $(window).on('key-esc', function (event) {
       BREAKOUTRUNNING = !BREAKOUTRUNNING;
@@ -764,7 +795,6 @@ var GameView = function (_View) {
       });
 
       spaceText.position.set((window.innerWidth - spaceText.width) / 2, (window.innerHeight - spaceText.height) / 2);
-
       this.stage.addChild(spaceText);
 
       $(window).one('key-space', function (event) {
@@ -775,14 +805,7 @@ var GameView = function (_View) {
       // this.stage.addChild(aiButton.body)
       // aiButton.onClick(() => {
       //   this.onAiButtonClick()
-      //
       //   $(window).trigger('key-space')
-      //   if (this.aiPlaying) {
-      //     aiButton.fillColor = 'rgba(0, 0, 0, 0.2)'
-      //   } else {
-      //     aiButton.fillColor = 'rgba(0, 0, 0, 0.01)'
-      //   }
-      //   aiButton.draw()
       // })
     }
   }, {
@@ -799,6 +822,7 @@ var GameView = function (_View) {
       for (var x = 0; x < blocksWidth; x++) {
         for (var y = 0; y < 5; y++) {
           this.entities.push(new _brick2.default(x * 80, y * 40 + yOffset, colors[y]));
+          this.bricksTotal++;
         }
       }
 
@@ -869,7 +893,7 @@ var GameView = function (_View) {
         } else if (entity.y + entity.height > this.view.height) {
           entity.y = this.view.height - entity.height;
           entity.vy *= -1;
-          if (entity instanceof _ball2.default) this.endGame();
+          if (entity instanceof _ball2.default) this.loseGame();
         }
       }
     }
@@ -906,6 +930,7 @@ var GameView = function (_View) {
       if (other instanceof _brick2.default) {
         // kill the brick
         other.kill();
+        if (++this.bricksKilled === this.bricksTotal) this.winGame();
 
         // http://gamedev.stackexchange.com/a/5430
         // we need to do some time travelling to prevent overlapping entities
@@ -917,10 +942,6 @@ var GameView = function (_View) {
             ball.x += ball.vx;
             ball.y += ball.vy;
           }
-          // for debugging:
-          // ball.body.x = ball.x
-          // ball.body.y = ball.y
-          // this.stage.update();
         }
 
         if (ball.x < other.x + other.width && ball.x + ball.width > other.x) {
@@ -943,42 +964,73 @@ var GameView = function (_View) {
         }
     }
   }, {
-    key: 'endGame',
-    value: function endGame() {
-      // End Game Text
-      var text = new createjs.Text("Game Over", "72px monospace", "#ff7700");
-      var bounds = text.getBounds();
-      text.x = this.view.width / 2 - bounds.width / 2;
-      text.y = this.view.height / 2 - bounds.height * 3;
-      text.textBaseline = "alphabetic";
+    key: 'winGame',
+    value: function winGame() {
+      var text = new PIXI.Text('You Won!', {
+        font: '72px monospace',
+        fill: '#ff7700',
+        align: 'center'
+      });
+
+      text.x = this.view.width / 2 - text.width / 2;
+      text.y = this.view.height / 2 - text.height * 3;
       this.stage.addChild(text);
 
       // UI Buttons
       var centerX = this.view.width / 2;
       var centerY = this.view.height / 2;
-      var restartButton = new _button2.default(this.stage, {
+      var restartButton = new _button2.default({
         text: 'Restart',
-        textColor: '#ff7700',
         font: '48px monospace'
       });
-      restartButton.x = centerX - restartButton.textWidth() / 2;
-      restartButton.y = centerY - restartButton.textHeight();
-      restartButton.draw();
+      restartButton.x = centerX - restartButton.width / 2;
+      restartButton.y = centerY - restartButton.height;
       restartButton.onClick(function () {
         return $(window).trigger('transition', GameView);
       });
+      restartButton.move();
+      this.stage.addChild(restartButton.body);
 
-      var homeButton = new _button2.default(this.stage, {
-        text: 'Home',
-        textColor: '#ff7700',
+      BREAKOUTRUNNING = false;
+    }
+  }, {
+    key: 'loseGame',
+    value: function loseGame() {
+      // End Game Text
+      var text = new PIXI.Text('Game Over', {
+        font: '72px monospace',
+        fill: '#ff7700',
+        align: 'center'
+      });
+
+      text.x = this.view.width / 2 - text.width / 2;
+      text.y = this.view.height / 2 - text.height * 3;
+      this.stage.addChild(text);
+
+      // UI Buttons
+      var centerX = this.view.width / 2;
+      var centerY = this.view.height / 2;
+      var restartButton = new _button2.default({
+        text: 'Restart',
         font: '48px monospace'
       });
-      homeButton.x = centerX - homeButton.textWidth() / 2;
-      homeButton.y = centerY + homeButton.textHeight();
-      homeButton.draw();
-      homeButton.onClick(function () {
-        return $(window).trigger('transition', StartView);
+      restartButton.x = centerX - restartButton.width / 2;
+      restartButton.y = centerY - restartButton.height;
+      restartButton.onClick(function () {
+        return $(window).trigger('transition', GameView);
       });
+      restartButton.move();
+      this.stage.addChild(restartButton.body);
+
+      // let homeButton = new CanvasButton(this.stage, {
+      //   text: 'Home',
+      //   textColor: '#ff7700',
+      //   font: '48px monospace'
+      // })
+      // homeButton.x = centerX - (homeButton.textWidth() / 2)
+      // homeButton.y = centerY + (homeButton.textHeight())
+      // homeButton.draw()
+      // homeButton.onClick(() => $(window).trigger('transition', StartView))
 
       BREAKOUTRUNNING = false;
     }

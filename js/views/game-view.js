@@ -13,14 +13,14 @@ import View from './view.js'
 export default class GameView  extends View {
   constructor(stage, renderer) {
     super(stage, renderer)
+    BREAKOUTRUNNING = true
     this.aiWorker = null
     this.aiPlaying = false
+    this.bricksTotal = 0
+    this.bricksKilled = 0
 
     this.createUIElements()
     this.createEntitites()
-
-    let aiButton = new CanvasButton({})
-    this.stage.addChild(aiButton.body)
 
     $(window).on('key-esc', (event) => { BREAKOUTRUNNING = !BREAKOUTRUNNING })
 
@@ -41,26 +41,17 @@ export default class GameView  extends View {
       (window.innerWidth - spaceText.width) / 2,
       (window.innerHeight - spaceText.height) / 2
     )
-
     this.stage.addChild(spaceText)
 
     $(window).one('key-space', (event) => {
       this.stage.removeChild(spaceText)
     })
 
-
     // let aiButton = new CanvasButton({})
     // this.stage.addChild(aiButton.body)
     // aiButton.onClick(() => {
     //   this.onAiButtonClick()
-    //
     //   $(window).trigger('key-space')
-    //   if (this.aiPlaying) {
-    //     aiButton.fillColor = 'rgba(0, 0, 0, 0.2)'
-    //   } else {
-    //     aiButton.fillColor = 'rgba(0, 0, 0, 0.01)'
-    //   }
-    //   aiButton.draw()
     // })
   }
 
@@ -76,6 +67,7 @@ export default class GameView  extends View {
     for (let x = 0; x < blocksWidth; x++) {
       for (let y = 0; y < 5; y++) {
         this.entities.push(new Brick(x * 80, y * 40 + yOffset, colors[y]))
+        this.bricksTotal++
       }
     }
 
@@ -143,7 +135,7 @@ export default class GameView  extends View {
       } else if (entity.y + entity.height > this.view.height){
         entity.y = this.view.height - entity.height
         entity.vy *= -1
-        if (entity instanceof Ball) this.endGame()
+        if (entity instanceof Ball) this.loseGame()
       }
     }
   }
@@ -182,6 +174,7 @@ export default class GameView  extends View {
     if (other instanceof Brick) {
       // kill the brick
       other.kill();
+      if (++this.bricksKilled === this.bricksTotal) this.winGame()
 
       // http://gamedev.stackexchange.com/a/5430
       // we need to do some time travelling to prevent overlapping entities
@@ -193,10 +186,6 @@ export default class GameView  extends View {
           ball.x += ball.vx
           ball.y += ball.vy
         }
-        // for debugging:
-        // ball.body.x = ball.x
-        // ball.body.y = ball.y
-        // this.stage.update();
       }
 
       if (ball.x < other.x + other.width &&
@@ -222,37 +211,67 @@ export default class GameView  extends View {
     }
   }
 
-  endGame() {
-    // End Game Text
-    let text = new createjs.Text("Game Over", "72px monospace", "#ff7700");
-    let bounds = text.getBounds()
-    text.x = (this.view.width / 2) - (bounds.width / 2);
-    text.y = (this.view.height / 2) - (bounds.height * 3);
-    text.textBaseline = "alphabetic";
+  winGame() {
+    let text = new PIXI.Text('You Won!', {
+      font: '72px monospace',
+      fill: '#ff7700',
+      align: 'center'
+    });
+
+    text.x = (this.view.width / 2) - (text.width / 2);
+    text.y = (this.view.height / 2) - (text.height * 3);
     this.stage.addChild(text)
 
     // UI Buttons
     let centerX = this.view.width / 2
     let centerY = this.view.height / 2
-    let restartButton = new CanvasButton(this.stage, {
+    let restartButton = new CanvasButton({
       text: 'Restart',
-      textColor: '#ff7700',
       font: '48px monospace'
     })
-    restartButton.x = centerX - (restartButton.textWidth() / 2)
-    restartButton.y = centerY - (restartButton.textHeight())
-    restartButton.draw()
+    restartButton.x = centerX - (restartButton.width / 2)
+    restartButton.y = centerY - (restartButton.height)
     restartButton.onClick(() => $(window).trigger('transition', GameView))
+    restartButton.move()
+    this.stage.addChild(restartButton.body)
 
-    let homeButton = new CanvasButton(this.stage, {
-      text: 'Home',
-      textColor: '#ff7700',
+    BREAKOUTRUNNING = false
+  }
+
+  loseGame() {
+    // End Game Text
+    let text = new PIXI.Text('Game Over', {
+      font: '72px monospace',
+      fill: '#ff7700',
+      align: 'center'
+    });
+
+    text.x = (this.view.width / 2) - (text.width / 2);
+    text.y = (this.view.height / 2) - (text.height * 3);
+    this.stage.addChild(text)
+
+    // UI Buttons
+    let centerX = this.view.width / 2
+    let centerY = this.view.height / 2
+    let restartButton = new CanvasButton({
+      text: 'Restart',
       font: '48px monospace'
     })
-    homeButton.x = centerX - (homeButton.textWidth() / 2)
-    homeButton.y = centerY + (homeButton.textHeight())
-    homeButton.draw()
-    homeButton.onClick(() => $(window).trigger('transition', StartView))
+    restartButton.x = centerX - (restartButton.width / 2)
+    restartButton.y = centerY - (restartButton.height)
+    restartButton.onClick(() => $(window).trigger('transition', GameView))
+    restartButton.move()
+    this.stage.addChild(restartButton.body)
+
+    // let homeButton = new CanvasButton(this.stage, {
+    //   text: 'Home',
+    //   textColor: '#ff7700',
+    //   font: '48px monospace'
+    // })
+    // homeButton.x = centerX - (homeButton.textWidth() / 2)
+    // homeButton.y = centerY + (homeButton.textHeight())
+    // homeButton.draw()
+    // homeButton.onClick(() => $(window).trigger('transition', StartView))
 
     BREAKOUTRUNNING = false
   }
