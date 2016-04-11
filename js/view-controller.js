@@ -9,7 +9,9 @@ export default class ViewController {
   constructor() {
     this.stage = new PIXI.Container();
     this.renderer = PIXI.autoDetectRenderer(window.innerWidth, window.innerHeight, {
-      backgroundColor: 0xffffff
+      backgroundColor: 0xffffff,
+      view: document.getElementById('pixi-render'),
+      preserveDrawingBuffer: true
     });
     document.body.appendChild(this.renderer.view);
 

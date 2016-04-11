@@ -18,6 +18,7 @@ export default class CanvasButton extends Entity {
     this.tintOff   = args.tintOff || 0xe64703
 
     this.listeners = []
+    this.canActivate = true
 
     let text = new PIXI.Text(this.text, { fill : this.textFill })
     let left = new PIXI.Sprite.fromImage('assets/button-left.png')
@@ -52,14 +53,22 @@ export default class CanvasButton extends Entity {
     for (let i in this.body.children) {
       let child = this.body.children[i]
       child.interactive = true;
-      child.on('mousedown', (event) => {
-        for ( let i in this.listeners ) this.listeners[i](event)
-      })
+      child.on('mousedown', (event) => { this.activate() })
 
-      child.on('touchstart', (event) => {
-        for ( let i in this.listeners ) this.listeners[i](event)
-      })
+      child.on('touchstart', (event) => { this.canActivate() })
     }
+  }
+
+  activate() {
+    if ( this.canActivate ) for ( let i in this.listeners ) {
+      this.listeners[i](event)
+    }
+    this.delayActivation()
+  }
+
+  delayActivation() {
+    this.canActivate = false
+    setTimeout( _ => this.canActivate = true, 200 )
   }
 
   onClick(func) {

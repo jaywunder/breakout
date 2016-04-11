@@ -19,12 +19,38 @@ export default class GameView  extends View {
     this.bricksTotal = 0
     this.bricksKilled = 0
 
+    this.scaledCanvas = $(`<canvas id="ai-render" width="40" height="40"></canvas>`)[0]
+    this.scaleCanvasWidth = this.scaledCanvas.width / this.view.width
+    this.scaleCanvasHeight = this.scaledCanvas.height / this.view.height
+    $('body').append(this.scaledCanvas)
+    this.scaledCtx = this.scaledCanvas.getContext('2d')
+    this.transferImage = new Image()
+    this.transferImage.onload = () => {
+      let width = this.scaledCanvas.width
+      let height = this.scaledCanvas.height
+      this.scaledCtx.drawImage(
+        this.transferImage, 0, 0, this.scaledCanvas.width, this.scaledCanvas.height / 2
+      );
+      this.scaledCtx.fillStyle = '#000000'
+      let x = this.entities[1].x * this.scaleCanvasWidth
+      this.scaledCtx.fillRect(x - 1, 0, 2, 20)
+    }
+    this.transferBinImage = new Image()
+    this.transferBinImage.onload = () => {
+      this.scaledCtx.drawImage(
+        this.transferBinImage, 0, this.transferImage.height, this.scaledCanvas.width, this.scaledCanvas.height
+      )
+    }
+
+    // TODO: also display getAIData info
+
     this.createUIElements()
     this.createEntitites()
 
     $(window).on('key-esc', (event) => { BREAKOUTRUNNING = !BREAKOUTRUNNING })
 
     $(document).on('mousemove touchstart touchmove', (event) => {
+      if (this.aiPlaying) return
       var {x, y} = pointerEventToXY(event)
       if (this.paddle) this.paddle.x = x - this.paddle.width / 2
     })
@@ -47,12 +73,14 @@ export default class GameView  extends View {
       this.stage.removeChild(spaceText)
     })
 
-    // let aiButton = new CanvasButton({})
-    // this.stage.addChild(aiButton.body)
-    // aiButton.onClick(() => {
-    //   this.onAiButtonClick()
-    //   $(window).trigger('key-space')
-    // })
+    let aiButton = new CanvasButton({
+      text: 'Toggle AI'
+    })
+    this.stage.addChild(aiButton.body)
+    aiButton.onClick(() => {
+      this.onAiButtonClick()
+      $(window).trigger('key-space')
+    })
   }
 
   createEntitites() {
@@ -77,30 +105,53 @@ export default class GameView  extends View {
   }
 
   onAiMessage(event) {
-    console.log(event);
+    console.log(event.data)
+    this.paddle.x = event.data * this.view.width
+  }
+
+  getAIData() {
+    let inData = this.scaledCtx.getImageData(0, 0, this.scaledCanvas.width, this.scaledCanvas.height).data
+    let outData = new Uint8Array(inData.length / 8)
+    for (let i = 0; i < inData.length / 2; i += 4) {
+      if (inData[i] < 240 || inData[i+1] < 240 || inData[i+2] < 240)
+        outData[i / 4] = 1
+      else
+        outData[i / 4] = 0
+    }
+    return outData
   }
 
   onAiButtonClick() {
     this.aiPlaying = !this.aiPlaying
     if (this.aiPlaying) {
-      this.aiWorker = new Worker("./js/ai.js");
-      this.aiWorker.onmessage = (event) => {
-        this.onAiMessage(event.data)
-      }
-
+      console.log('AI PLAYING');
+      this.aiWorker = new Worker("./js/ai.js")
+      this.aiWorker.onmessage = (event) => this.onAiMessage(event)
+      this.aiWorker.postMessage({
+        type: 'nn-init',
+        inputDim: this.getAIData().length
+      })
     } else {
+      console.log('AI NOT PLAYING');
       this.aiWorker.terminate()
       this.aiWorker = null
     }
-    this.aiWorker.postMessage('ping')
   }
 
   update() {
-    this.checkEdges()
-
-    // update and move all entities
     if (BREAKOUTRUNNING) {
+      if (this.aiPlaying){
+        // console.log('trying to post a message to the worker', this.aiWorker);
+        this.aiWorker.postMessage({
+          type: 'learning-data',
+          input: this.getAIData(),
+          target: this.entities[1].x / this.view.width // normalize the ball's x value
+        })
+      }
+
+      this.checkEdges()
       this.checkCollisions()
+      this.updateTinyCanvas()
 
       // garbage collect dead entities after all updates
       for (let i in this.entities) {
@@ -118,8 +169,20 @@ export default class GameView  extends View {
     }
   }
 
-  checkEdges() {
+  updateTinyCanvas() {
+    this.transferImage.src = this.view.toDataURL()
+    let binImageData = this.scaledCtx.createImageData(40, 20)
+    let aiData = this.getAIData()
+    for (let i = 0; i < aiData.length; i++) {
+      binImageData.data[i * 4 + 0] = aiData[i] * 255
+      binImageData.data[i * 4 + 1] = aiData[i] * 255
+      binImageData.data[i * 4 + 2] = aiData[i] * 255
+      binImageData.data[i * 4 + 3] = 255
+    }
+    this.scaledCtx.putImageData(binImageData, 0, 20)
+  }
 
+  checkEdges() {
     for (let i in this.entities) {
       let entity = this.entities[i]
 
@@ -135,7 +198,8 @@ export default class GameView  extends View {
       } else if (entity.y + entity.height > this.view.height){
         entity.y = this.view.height - entity.height
         entity.vy *= -1
-        if (entity instanceof Ball) this.loseGame()
+        // TODO: fix this eventually
+        // if (entity instanceof Ball) this.loseGame()
       }
     }
   }
@@ -152,9 +216,7 @@ export default class GameView  extends View {
           if (other instanceof Follower) continue // followers don't collide
 
           if (this.isColliding(entity, other)) {
-              // console.log(entity.id + ' ->*<- ' + other.id + ' at ' + entity.pos + ' and ' + other.pos);
-              // console.log(`${other.id} is ${ other.alive ? 'alive' : 'dead' }`);
-              this.collide(entity, other)
+            this.collide(entity, other)
           }
         }
       }
@@ -191,15 +253,14 @@ export default class GameView  extends View {
       if (ball.x < other.x + other.width &&
           ball.x + ball.width > other.x) {
         ball.vy *= -1
+        ball.ay *= -1
       }
 
       if (ball.y < other.y + other.height &&
           ball.y + ball.height > other.y) {
         ball.vx *= -1
+        ball.ax *= -1
       }
-
-      // ball.vy *= -1
-      // ball.ay *= -1
 
     } else if (other instanceof Paddle) {
       // bounce the ball
@@ -262,16 +323,6 @@ export default class GameView  extends View {
     restartButton.onClick(() => $(window).trigger('transition', GameView))
     restartButton.move()
     this.stage.addChild(restartButton.body)
-
-    // let homeButton = new CanvasButton(this.stage, {
-    //   text: 'Home',
-    //   textColor: '#ff7700',
-    //   font: '48px monospace'
-    // })
-    // homeButton.x = centerX - (homeButton.textWidth() / 2)
-    // homeButton.y = centerY + (homeButton.textHeight())
-    // homeButton.draw()
-    // homeButton.onClick(() => $(window).trigger('transition', StartView))
 
     BREAKOUTRUNNING = false
   }

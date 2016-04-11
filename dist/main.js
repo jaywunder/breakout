@@ -465,44 +465,20 @@ window.addEventListener('keydown', function (event) {
       // space key
       $(window).trigger('key-space');
       break;
+    case 187:
+      // plus key
+      $(window).trigger('download-image');
+      break;
   }
 });
 
-new _viewController2.default();
+$(window).on('download-image', function () {
+  var canvas = document.querySelector('canvas');
+  var data64 = canvas.toDataURL("image/png");
+  console.log(data64);
+});
 
-// var renderer = PIXI.autoDetectRenderer(800, 600,{backgroundColor : 0x1099bb});
-// document.body.appendChild(renderer.view);
-//
-// // create the root of the scene graph
-// var stage = new PIXI.Container();
-//
-// // create a texture from an image path
-// var texture = PIXI.Texture.fromImage('assets/bunny.png');
-//
-// // create a new Sprite using the texture
-// var bunny = new PIXI.Sprite(texture);
-//
-// // center the sprite's anchor point
-// bunny.anchor.x = 0.5;
-// bunny.anchor.y = 0.5;
-//
-// // move the sprite to the center of the screen
-// bunny.position.x = 200;
-// bunny.position.y = 150;
-//
-// stage.addChild(bunny);
-//
-// // start animating
-// animate();
-// function animate() {
-//     requestAnimationFrame(animate);
-//
-//     // just for fun, let's rotate mr rabbit a little
-//     bunny.rotation += 0.1;
-//
-//     // render the container
-//     renderer.render(stage);
-// }
+new _viewController2.default();
 
 },{"./view-controller.js":8}],7:[function(require,module,exports){
 // jshint -W117
@@ -545,6 +521,7 @@ var CanvasButton = function (_Entity) {
     _this.tintOff = args.tintOff || 0xe64703;
 
     _this.listeners = [];
+    _this.canActivate = true;
 
     var text = new PIXI.Text(_this.text, { fill: _this.textFill });
     var left = new PIXI.Sprite.fromImage('assets/button-left.png');
@@ -580,21 +557,35 @@ var CanvasButton = function (_Entity) {
       var child = _this.body.children[_i];
       child.interactive = true;
       child.on('mousedown', function (event) {
-        for (var _i2 in _this.listeners) {
-          _this.listeners[_i2](event);
-        }
+        _this.activate();
       });
 
       child.on('touchstart', function (event) {
-        for (var _i3 in _this.listeners) {
-          _this.listeners[_i3](event);
-        }
+        _this.canActivate();
       });
     }
     return _this;
   }
 
   _createClass(CanvasButton, [{
+    key: 'activate',
+    value: function activate() {
+      if (this.canActivate) for (var i in this.listeners) {
+        this.listeners[i](event);
+      }
+      this.delayActivation();
+    }
+  }, {
+    key: 'delayActivation',
+    value: function delayActivation() {
+      var _this2 = this;
+
+      this.canActivate = false;
+      setTimeout(function (_) {
+        return _this2.canActivate = true;
+      }, 200);
+    }
+  }, {
     key: 'onClick',
     value: function onClick(func) {
       this.listeners.push(func);
@@ -635,7 +626,9 @@ var ViewController = function () {
 
     this.stage = new PIXI.Container();
     this.renderer = PIXI.autoDetectRenderer(window.innerWidth, window.innerHeight, {
-      backgroundColor: 0xffffff
+      backgroundColor: 0xffffff,
+      view: document.getElementById('pixi-render'),
+      preserveDrawingBuffer: true
     });
     document.body.appendChild(this.renderer.view);
 
@@ -765,6 +758,27 @@ var GameView = function (_View) {
     _this.bricksTotal = 0;
     _this.bricksKilled = 0;
 
+    _this.scaledCanvas = $('<canvas id="ai-render" width="40" height="40"></canvas>')[0];
+    _this.scaleCanvasWidth = _this.scaledCanvas.width / _this.view.width;
+    _this.scaleCanvasHeight = _this.scaledCanvas.height / _this.view.height;
+    $('body').append(_this.scaledCanvas);
+    _this.scaledCtx = _this.scaledCanvas.getContext('2d');
+    _this.transferImage = new Image();
+    _this.transferImage.onload = function () {
+      var width = _this.scaledCanvas.width;
+      var height = _this.scaledCanvas.height;
+      _this.scaledCtx.drawImage(_this.transferImage, 0, 0, _this.scaledCanvas.width, _this.scaledCanvas.height / 2);
+      _this.scaledCtx.fillStyle = '#000000';
+      var x = _this.entities[1].x * _this.scaleCanvasWidth;
+      _this.scaledCtx.fillRect(x - 1, 0, 2, 20);
+    };
+    _this.transferBinImage = new Image();
+    _this.transferBinImage.onload = function () {
+      _this.scaledCtx.drawImage(_this.transferBinImage, 0, _this.transferImage.height, _this.scaledCanvas.width, _this.scaledCanvas.height);
+    };
+
+    // TODO: also display getAIData info
+
     _this.createUIElements();
     _this.createEntitites();
 
@@ -773,6 +787,8 @@ var GameView = function (_View) {
     });
 
     $(document).on('mousemove touchstart touchmove', function (event) {
+      if (_this.aiPlaying) return;
+
       var _pointerEventToXY = pointerEventToXY(event);
 
       var x = _pointerEventToXY.x;
@@ -801,12 +817,14 @@ var GameView = function (_View) {
         _this2.stage.removeChild(spaceText);
       });
 
-      // let aiButton = new CanvasButton({})
-      // this.stage.addChild(aiButton.body)
-      // aiButton.onClick(() => {
-      //   this.onAiButtonClick()
-      //   $(window).trigger('key-space')
-      // })
+      var aiButton = new _button2.default({
+        text: 'Toggle AI'
+      });
+      this.stage.addChild(aiButton.body);
+      aiButton.onClick(function () {
+        _this2.onAiButtonClick();
+        $(window).trigger('key-space');
+      });
     }
   }, {
     key: 'createEntitites',
@@ -833,7 +851,18 @@ var GameView = function (_View) {
   }, {
     key: 'onAiMessage',
     value: function onAiMessage(event) {
-      console.log(event);
+      console.log(event.data);
+      this.paddle.x = event.data * this.view.width;
+    }
+  }, {
+    key: 'getAIData',
+    value: function getAIData() {
+      var inData = this.scaledCtx.getImageData(0, 0, this.scaledCanvas.width, this.scaledCanvas.height).data;
+      var outData = new Uint8Array(inData.length / 8);
+      for (var i = 0; i < inData.length / 2; i += 4) {
+        if (inData[i] < 240 || inData[i + 1] < 240 || inData[i + 2] < 240) outData[i / 4] = 1;else outData[i / 4] = 0;
+      }
+      return outData;
     }
   }, {
     key: 'onAiButtonClick',
@@ -842,24 +871,37 @@ var GameView = function (_View) {
 
       this.aiPlaying = !this.aiPlaying;
       if (this.aiPlaying) {
+        console.log('AI PLAYING');
         this.aiWorker = new Worker("./js/ai.js");
         this.aiWorker.onmessage = function (event) {
-          _this3.onAiMessage(event.data);
+          return _this3.onAiMessage(event);
         };
+        this.aiWorker.postMessage({
+          type: 'nn-init',
+          inputDim: this.getAIData().length
+        });
       } else {
+        console.log('AI NOT PLAYING');
         this.aiWorker.terminate();
         this.aiWorker = null;
       }
-      this.aiWorker.postMessage('ping');
     }
   }, {
     key: 'update',
     value: function update() {
-      this.checkEdges();
-
-      // update and move all entities
       if (BREAKOUTRUNNING) {
+        if (this.aiPlaying) {
+          // console.log('trying to post a message to the worker', this.aiWorker);
+          this.aiWorker.postMessage({
+            type: 'learning-data',
+            input: this.getAIData(),
+            target: this.entities[1].x / this.view.width // normalize the ball's x value
+          });
+        }
+
+        this.checkEdges();
         this.checkCollisions();
+        this.updateTinyCanvas();
 
         // garbage collect dead entities after all updates
         for (var i in this.entities) {
@@ -875,9 +917,22 @@ var GameView = function (_View) {
       }
     }
   }, {
+    key: 'updateTinyCanvas',
+    value: function updateTinyCanvas() {
+      this.transferImage.src = this.view.toDataURL();
+      var binImageData = this.scaledCtx.createImageData(40, 20);
+      var aiData = this.getAIData();
+      for (var i = 0; i < aiData.length; i++) {
+        binImageData.data[i * 4 + 0] = aiData[i] * 255;
+        binImageData.data[i * 4 + 1] = aiData[i] * 255;
+        binImageData.data[i * 4 + 2] = aiData[i] * 255;
+        binImageData.data[i * 4 + 3] = 255;
+      }
+      this.scaledCtx.putImageData(binImageData, 0, 20);
+    }
+  }, {
     key: 'checkEdges',
     value: function checkEdges() {
-
       for (var i in this.entities) {
         var entity = this.entities[i];
 
@@ -893,7 +948,8 @@ var GameView = function (_View) {
         } else if (entity.y + entity.height > this.view.height) {
           entity.y = this.view.height - entity.height;
           entity.vy *= -1;
-          if (entity instanceof _ball2.default) this.loseGame();
+          // TODO: fix this eventually
+          // if (entity instanceof Ball) this.loseGame()
         }
       }
     }
@@ -911,8 +967,6 @@ var GameView = function (_View) {
             if (other instanceof _follower2.default) continue; // followers don't collide
 
             if (this.isColliding(entity, other)) {
-              // console.log(entity.id + ' ->*<- ' + other.id + ' at ' + entity.pos + ' and ' + other.pos);
-              // console.log(`${other.id} is ${ other.alive ? 'alive' : 'dead' }`);
               this.collide(entity, other);
             }
           }
@@ -946,22 +1000,21 @@ var GameView = function (_View) {
 
         if (ball.x < other.x + other.width && ball.x + ball.width > other.x) {
           ball.vy *= -1;
+          ball.ay *= -1;
         }
 
         if (ball.y < other.y + other.height && ball.y + ball.height > other.y) {
           ball.vx *= -1;
+          ball.ax *= -1;
         }
-
-        // ball.vy *= -1
-        // ball.ay *= -1
       } else if (other instanceof _paddle2.default) {
-          // bounce the ball
-          ball.vy *= -1;
+        // bounce the ball
+        ball.vy *= -1;
 
-          // bounce the x direction depending on where the ball hit the paddle
-          var bounceX = ball.x + ball.width / 2 - other.x;
-          ball.vx = (bounceX / other.width - 0.5) * 20;
-        }
+        // bounce the x direction depending on where the ball hit the paddle
+        var bounceX = ball.x + ball.width / 2 - other.x;
+        ball.vx = (bounceX / other.width - 0.5) * 20;
+      }
     }
   }, {
     key: 'winGame',
@@ -1021,16 +1074,6 @@ var GameView = function (_View) {
       });
       restartButton.move();
       this.stage.addChild(restartButton.body);
-
-      // let homeButton = new CanvasButton(this.stage, {
-      //   text: 'Home',
-      //   textColor: '#ff7700',
-      //   font: '48px monospace'
-      // })
-      // homeButton.x = centerX - (homeButton.textWidth() / 2)
-      // homeButton.y = centerY + (homeButton.textHeight())
-      // homeButton.draw()
-      // homeButton.onClick(() => $(window).trigger('transition', StartView))
 
       BREAKOUTRUNNING = false;
     }
