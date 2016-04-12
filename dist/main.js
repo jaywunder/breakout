@@ -318,64 +318,6 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var Follower = function (_Entity) {
-  _inherits(Follower, _Entity);
-
-  function Follower(other) {
-    _classCallCheck(this, Follower);
-
-    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Follower).call(this, 'follower', {
-      x: 0, y: 0
-    }));
-
-    _this.other = other;
-
-    _this.body.graphics.beginFill('#000000').drawCircle(_this.x, _this.y, 10);
-    return _this;
-  }
-
-  _createClass(Follower, [{
-    key: 'moveTo',
-    value: function moveTo(other) {
-      this.other = other;
-    }
-  }, {
-    key: 'update',
-    value: function update() {
-      this.pos = this.other.pos;
-
-      return this;
-    }
-  }]);
-
-  return Follower;
-}(_entity2.default);
-
-exports.default = Follower;
-
-},{"./entity.js":3}],5:[function(require,module,exports){
-// jshint -W117
-// jshint -W097
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _entity = require('./entity.js');
-
-var _entity2 = _interopRequireDefault(_entity);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
 var Paddle = function (_Entity) {
   _inherits(Paddle, _Entity);
 
@@ -427,7 +369,7 @@ var Paddle = function (_Entity) {
 
 exports.default = Paddle;
 
-},{"./entity.js":3}],6:[function(require,module,exports){
+},{"./entity.js":3}],5:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 'use strict';
@@ -480,7 +422,7 @@ $(window).on('download-image', function () {
 
 new _viewController2.default();
 
-},{"./view-controller.js":8}],7:[function(require,module,exports){
+},{"./view-controller.js":7}],6:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 'use strict';
@@ -597,7 +539,7 @@ var CanvasButton = function (_Entity) {
 
 exports.default = CanvasButton;
 
-},{"../entities/entity.js":3}],8:[function(require,module,exports){
+},{"../entities/entity.js":3}],7:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 'use strict';
@@ -699,7 +641,7 @@ var ViewController = function () {
 
 exports.default = ViewController;
 
-},{"./views/game-view.js":9,"./views/start-view.js":10}],9:[function(require,module,exports){
+},{"./views/game-view.js":8,"./views/start-view.js":9}],8:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 "use strict";
@@ -722,10 +664,6 @@ var _paddle = require('../entities/paddle.js');
 
 var _paddle2 = _interopRequireDefault(_paddle);
 
-var _follower = require('../entities/follower.js');
-
-var _follower2 = _interopRequireDefault(_follower);
-
 var _button = require('../ui/button.js');
 
 var _button2 = _interopRequireDefault(_button);
@@ -736,13 +674,38 @@ var _view2 = _interopRequireDefault(_view);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 window.BREAKOUTRUNNING = true; // global variable because I'm lazy and dumb
+
+var NNPlayer = function () {
+  function NNPlayer(inputDim) {
+    _classCallCheck(this, NNPlayer);
+
+    console.log('NN: making the AIPLAYER', inputDim);
+    this.inputDim = inputDim;
+    this.hiddenDim = Math.round(inputDim * 1.2);
+    this.outputDim = 1;
+    this.network = new synaptic.Architect.Perceptron(this.inputDim, this.hiddenDim, this.outputDim);
+    console.log('NN: made the network...', this.network);
+  }
+
+  _createClass(NNPlayer, [{
+    key: 'learn',
+    value: function learn(input, target) {
+      console.log('input', input);
+      console.log('target', target);
+      this.network.propagate(0.01, target);
+      return this.network.activate(input);
+    }
+  }]);
+
+  return NNPlayer;
+}();
 
 var GameView = function (_View) {
   _inherits(GameView, _View);
@@ -753,31 +716,10 @@ var GameView = function (_View) {
     var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(GameView).call(this, stage, renderer));
 
     BREAKOUTRUNNING = true;
-    _this.aiWorker = null;
-    _this.aiPlaying = false;
+    _this.nnPlayer = null;
+    _this.nnPlaying = false;
     _this.bricksTotal = 0;
     _this.bricksKilled = 0;
-
-    _this.scaledCanvas = $('<canvas id="ai-render" width="40" height="40"></canvas>')[0];
-    _this.scaleCanvasWidth = _this.scaledCanvas.width / _this.view.width;
-    _this.scaleCanvasHeight = _this.scaledCanvas.height / _this.view.height;
-    $('body').append(_this.scaledCanvas);
-    _this.scaledCtx = _this.scaledCanvas.getContext('2d');
-    _this.transferImage = new Image();
-    _this.transferImage.onload = function () {
-      var width = _this.scaledCanvas.width;
-      var height = _this.scaledCanvas.height;
-      _this.scaledCtx.drawImage(_this.transferImage, 0, 0, _this.scaledCanvas.width, _this.scaledCanvas.height / 2);
-      _this.scaledCtx.fillStyle = '#000000';
-      var x = _this.entities[1].x * _this.scaleCanvasWidth;
-      _this.scaledCtx.fillRect(x - 1, 0, 2, 20);
-    };
-    _this.transferBinImage = new Image();
-    _this.transferBinImage.onload = function () {
-      _this.scaledCtx.drawImage(_this.transferBinImage, 0, _this.transferImage.height, _this.scaledCanvas.width, _this.scaledCanvas.height);
-    };
-
-    // TODO: also display getAIData info
 
     _this.createUIElements();
     _this.createEntitites();
@@ -787,7 +729,7 @@ var GameView = function (_View) {
     });
 
     $(document).on('mousemove touchstart touchmove', function (event) {
-      if (_this.aiPlaying) return;
+      if (_this.nnPlaying) return;
 
       var _pointerEventToXY = pointerEventToXY(event);
 
@@ -847,61 +789,51 @@ var GameView = function (_View) {
       for (var i in this.entities) {
         this.stage.addChild(this.entities[i].body);
       }
-    }
-  }, {
-    key: 'onAiMessage',
-    value: function onAiMessage(event) {
-      console.log(event.data);
-      this.paddle.x = event.data * this.view.width;
+
+      // create nn input array so we don't have to createa a new one every frame
+      // this.nnInput = new Array(this.entities.length * 2)
+      this.nnInput = new Float64Array(this.entities.length * 2);
     }
   }, {
     key: 'getAIData',
     value: function getAIData() {
-      var inData = this.scaledCtx.getImageData(0, 0, this.scaledCanvas.width, this.scaledCanvas.height).data;
-      var outData = new Uint8Array(inData.length / 8);
-      for (var i = 0; i < inData.length / 2; i += 4) {
-        if (inData[i] < 240 || inData[i + 1] < 240 || inData[i + 2] < 240) outData[i / 4] = 1;else outData[i / 4] = 0;
+      for (var i = 0; i < this.nnInput.length; i += 2) {
+        // if the entity doesn't exist it becomes a 0, 0 value
+        // not sure if that's going to work but hopefully it's good
+        var e = this.entities[i / 2] || { x: 0, y: 0 };
+        if (e.x < 0 || e.y < 0) console.log('this one is negative: ', e);
+
+        this.nnInput[i] = e.x / this.view.width > 0 ? e.x / this.view.width : 0;
+        this.nnInput[i + 1] = e.y / this.view.height > 0 ? e.y / this.view.height : 0;
       }
-      return outData;
+
+      // console.log(this.nnInput);
+      return this.nnInput;
     }
   }, {
     key: 'onAiButtonClick',
     value: function onAiButtonClick() {
-      var _this3 = this;
-
-      this.aiPlaying = !this.aiPlaying;
-      if (this.aiPlaying) {
-        console.log('AI PLAYING');
-        this.aiWorker = new Worker("./js/ai.js");
-        this.aiWorker.onmessage = function (event) {
-          return _this3.onAiMessage(event);
-        };
-        this.aiWorker.postMessage({
-          type: 'nn-init',
-          inputDim: this.getAIData().length
-        });
+      this.nnPlaying = !this.nnPlaying;
+      if (this.nnPlaying) {
+        this.nnPlayer = new NNPlayer(this.getAIData().length);
       } else {
-        console.log('AI NOT PLAYING');
-        this.aiWorker.terminate();
-        this.aiWorker = null;
+        this.nnPlayer = null;
       }
     }
   }, {
     key: 'update',
     value: function update() {
       if (BREAKOUTRUNNING) {
-        if (this.aiPlaying) {
-          // console.log('trying to post a message to the worker', this.aiWorker);
-          this.aiWorker.postMessage({
-            type: 'learning-data',
-            input: this.getAIData(),
-            target: this.entities[1].x / this.view.width // normalize the ball's x value
-          });
+        if (this.nnPlaying) {
+          var output = this.nnPlayer.learn(this.getAIData(), this.entities[1].x / this.view.width);
+          // PROBLEM: output is NaN
+          // console.log('target', this.entities[1].x / this.view.width);
+          console.log('output', output);
+          if (!Number.isNaN(output[0])) this.paddle.vx = output[0] - 0.5;
         }
 
         this.checkEdges();
         this.checkCollisions();
-        this.updateTinyCanvas();
 
         // garbage collect dead entities after all updates
         for (var i in this.entities) {
@@ -915,20 +847,6 @@ var GameView = function (_View) {
           this.entities[_i].update().move();
         }
       }
-    }
-  }, {
-    key: 'updateTinyCanvas',
-    value: function updateTinyCanvas() {
-      this.transferImage.src = this.view.toDataURL();
-      var binImageData = this.scaledCtx.createImageData(40, 20);
-      var aiData = this.getAIData();
-      for (var i = 0; i < aiData.length; i++) {
-        binImageData.data[i * 4 + 0] = aiData[i] * 255;
-        binImageData.data[i * 4 + 1] = aiData[i] * 255;
-        binImageData.data[i * 4 + 2] = aiData[i] * 255;
-        binImageData.data[i * 4 + 3] = 255;
-      }
-      this.scaledCtx.putImageData(binImageData, 0, 20);
     }
   }, {
     key: 'checkEdges',
@@ -964,7 +882,6 @@ var GameView = function (_View) {
           for (var j in this.entities) {
             if (i === j) continue; // so the entity doesn't collide with itself
             var other = this.entities[j];
-            if (other instanceof _follower2.default) continue; // followers don't collide
 
             if (this.isColliding(entity, other)) {
               this.collide(entity, other);
@@ -1099,7 +1016,7 @@ function pointerEventToXY(e) {
   return out;
 }
 
-},{"../entities/ball.js":1,"../entities/brick.js":2,"../entities/follower.js":4,"../entities/paddle.js":5,"../ui/button.js":7,"./view.js":11}],10:[function(require,module,exports){
+},{"../entities/ball.js":1,"../entities/brick.js":2,"../entities/paddle.js":4,"../ui/button.js":6,"./view.js":10}],9:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 'use strict';
@@ -1244,7 +1161,7 @@ var StartView = function () {
 
 exports.default = StartView;
 
-},{}],11:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 'use strict';
@@ -1281,4 +1198,4 @@ var View = function () {
 
 exports.default = View;
 
-},{}]},{},[6]);
+},{}]},{},[5]);
