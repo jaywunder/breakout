@@ -686,20 +686,16 @@ var NNPlayer = function () {
   function NNPlayer(inputDim) {
     _classCallCheck(this, NNPlayer);
 
-    console.log('NN: making the AIPLAYER', inputDim);
     this.inputDim = inputDim;
     this.hiddenDim = Math.round(inputDim * 1.2);
     this.outputDim = 1;
     this.network = new synaptic.Architect.Perceptron(this.inputDim, this.hiddenDim, this.outputDim);
-    console.log('NN: made the network...', this.network);
   }
 
   _createClass(NNPlayer, [{
     key: 'learn',
     value: function learn(input, target) {
-      console.log('input', input);
-      console.log('target', target);
-      this.network.propagate(0.01, target);
+      this.network.propagate(0.01, [target]);
       return this.network.activate(input);
     }
   }]);
@@ -774,7 +770,7 @@ var GameView = function (_View) {
       var yOffset = this.view.height / 8;
       this.paddle = new _paddle2.default(yOffset);
       this.entities.push(this.paddle);
-      this.entities.push(new _ball2.default(0, 0, this.paddle));
+      this.entities.push(new _ball2.default(this.view.width / 2, this.view.height - yOffset - 50, this.paddle));
 
       var blocksWidth = this.view.width / 80;
 
@@ -793,6 +789,7 @@ var GameView = function (_View) {
       // create nn input array so we don't have to createa a new one every frame
       // this.nnInput = new Array(this.entities.length * 2)
       this.nnInput = new Float64Array(this.entities.length * 2);
+      // this.nnInput = new Float64Array(4)
     }
   }, {
     key: 'getAIData',
@@ -801,13 +798,10 @@ var GameView = function (_View) {
         // if the entity doesn't exist it becomes a 0, 0 value
         // not sure if that's going to work but hopefully it's good
         var e = this.entities[i / 2] || { x: 0, y: 0 };
-        if (e.x < 0 || e.y < 0) console.log('this one is negative: ', e);
-
         this.nnInput[i] = e.x / this.view.width > 0 ? e.x / this.view.width : 0;
         this.nnInput[i + 1] = e.y / this.view.height > 0 ? e.y / this.view.height : 0;
       }
 
-      // console.log(this.nnInput);
       return this.nnInput;
     }
   }, {
@@ -825,11 +819,13 @@ var GameView = function (_View) {
     value: function update() {
       if (BREAKOUTRUNNING) {
         if (this.nnPlaying) {
-          var output = this.nnPlayer.learn(this.getAIData(), this.entities[1].x / this.view.width);
-          // PROBLEM: output is NaN
-          // console.log('target', this.entities[1].x / this.view.width);
-          console.log('output', output);
-          if (!Number.isNaN(output[0])) this.paddle.vx = output[0] - 0.5;
+          var ballX = this.entities[1].x;
+          var paddleX = this.entities[0].x + this.paddle.width / 2;
+          var target = (ballX - paddleX) / (this.view.width * 2) + 0.5;
+          var output = this.nnPlayer.learn(this.getAIData(), target);
+          console.log('this.paddle.width', this.paddle.width);
+          console.log('target', target);
+          if (!Number.isNaN(output[0])) this.paddle.vx = (output[0] - 0.5) * 200;
         }
 
         this.checkEdges();
@@ -866,8 +862,7 @@ var GameView = function (_View) {
         } else if (entity.y + entity.height > this.view.height) {
           entity.y = this.view.height - entity.height;
           entity.vy *= -1;
-          // TODO: fix this eventually
-          // if (entity instanceof Ball) this.loseGame()
+          if (entity instanceof _ball2.default) this.loseGame();
         }
       }
     }
@@ -966,33 +961,44 @@ var GameView = function (_View) {
   }, {
     key: 'loseGame',
     value: function loseGame() {
-      // End Game Text
-      var text = new PIXI.Text('Game Over', {
-        font: '72px monospace',
-        fill: '#ff7700',
-        align: 'center'
-      });
 
-      text.x = this.view.width / 2 - text.width / 2;
-      text.y = this.view.height / 2 - text.height * 3;
-      this.stage.addChild(text);
+      if (this.nnPlaying) {
 
-      // UI Buttons
-      var centerX = this.view.width / 2;
-      var centerY = this.view.height / 2;
-      var restartButton = new _button2.default({
-        text: 'Restart',
-        font: '48px monospace'
-      });
-      restartButton.x = centerX - restartButton.width / 2;
-      restartButton.y = centerY - restartButton.height;
-      restartButton.onClick(function () {
-        return $(window).trigger('transition', GameView);
-      });
-      restartButton.move();
-      this.stage.addChild(restartButton.body);
+        this.entities = [];
+        this.stage.children = [];
+        this.createEntitites();
+        console.log(this.entities);
+        $(window).trigger('key-space');
+      } else {
 
-      BREAKOUTRUNNING = false;
+        // End Game Text
+        var text = new PIXI.Text('Game Over', {
+          font: '72px monospace',
+          fill: '#ff7700',
+          align: 'center'
+        });
+
+        text.x = this.view.width / 2 - text.width / 2;
+        text.y = this.view.height / 2 - text.height * 3;
+        this.stage.addChild(text);
+
+        // UI Buttons
+        var centerX = this.view.width / 2;
+        var centerY = this.view.height / 2;
+        var restartButton = new _button2.default({
+          text: 'Restart',
+          font: '48px monospace'
+        });
+        restartButton.x = centerX - restartButton.width / 2;
+        restartButton.y = centerY - restartButton.height;
+        restartButton.onClick(function () {
+          return $(window).trigger('transition', GameView);
+        });
+        restartButton.move();
+        this.stage.addChild(restartButton.body);
+
+        BREAKOUTRUNNING = false;
+      }
     }
   }]);
 

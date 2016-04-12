@@ -11,18 +11,14 @@ import View from './view.js'
 
 class NNPlayer {
   constructor(inputDim) {
-    console.log('NN: making the AIPLAYER', inputDim);
     this.inputDim = inputDim
     this.hiddenDim = Math.round(inputDim * 1.2)
     this.outputDim = 1
     this.network = new synaptic.Architect.Perceptron(this.inputDim, this.hiddenDim, this.outputDim)
-    console.log('NN: made the network...', this.network);
   }
 
   learn(input, target) {
-    console.log('input', input);
-    console.log('target', target);
-    this.network.propagate(0.01, target)
+    this.network.propagate(0.01, [target])
     return this.network.activate(input)
   }
 }
@@ -80,7 +76,7 @@ export default class GameView  extends View {
     let yOffset = this.view.height / 8
     this.paddle = new Paddle(yOffset)
     this.entities.push(this.paddle)
-    this.entities.push(new Ball(0, 0, this.paddle))
+    this.entities.push(new Ball(this.view.width / 2, this.view.height - yOffset - 50, this.paddle))
 
     let blocksWidth = this.view.width / 80
 
@@ -99,6 +95,7 @@ export default class GameView  extends View {
     // create nn input array so we don't have to createa a new one every frame
     // this.nnInput = new Array(this.entities.length * 2)
     this.nnInput = new Float64Array(this.entities.length * 2)
+    // this.nnInput = new Float64Array(4)
   }
 
   getAIData() {
@@ -106,14 +103,10 @@ export default class GameView  extends View {
       // if the entity doesn't exist it becomes a 0, 0 value
       // not sure if that's going to work but hopefully it's good
       let e = this.entities[i / 2] || { x : 0, y : 0 }
-      if (e.x < 0 || e.y < 0)
-        console.log('this one is negative: ', e);
-
       this.nnInput[i  ] = e.x / this.view.width > 0 ? e.x / this.view.width : 0
       this.nnInput[i+1] = e.y / this.view.height > 0 ? e.y / this.view.height : 0
     }
 
-    // console.log(this.nnInput);
     return this.nnInput
   }
 
@@ -129,15 +122,17 @@ export default class GameView  extends View {
   update() {
     if (BREAKOUTRUNNING) {
       if (this.nnPlaying){
+        let ballX = this.entities[1].x
+        let paddleX = this.entities[0].x + this.paddle.width / 2
+        let target = ((ballX - paddleX) / (this.view.width * 2)) + 0.5
         let output = this.nnPlayer.learn(
           this.getAIData(),
-          this.entities[1].x / this.view.width
+          target
         )
-        // PROBLEM: output is NaN
-        // console.log('target', this.entities[1].x / this.view.width);
-        console.log('output', output);
+        console.log('this.paddle.width', this.paddle.width);
+        console.log('target', target);
         if (!Number.isNaN(output[0]))
-          this.paddle.vx = (output[0] - 0.5)
+          this.paddle.vx = (output[0] - 0.5) * 200
       }
 
       this.checkEdges()
@@ -175,8 +170,7 @@ export default class GameView  extends View {
       } else if (entity.y + entity.height > this.view.height){
         entity.y = this.view.height - entity.height
         entity.vy *= -1
-        // TODO: fix this eventually
-        // if (entity instanceof Ball) this.loseGame()
+        if (entity instanceof Ball) this.loseGame()
       }
     }
   }
@@ -276,31 +270,43 @@ export default class GameView  extends View {
   }
 
   loseGame() {
-    // End Game Text
-    let text = new PIXI.Text('Game Over', {
-      font: '72px monospace',
-      fill: '#ff7700',
-      align: 'center'
-    });
 
-    text.x = (this.view.width / 2) - (text.width / 2);
-    text.y = (this.view.height / 2) - (text.height * 3);
-    this.stage.addChild(text)
+    if ( this.nnPlaying) {
 
-    // UI Buttons
-    let centerX = this.view.width / 2
-    let centerY = this.view.height / 2
-    let restartButton = new CanvasButton({
-      text: 'Restart',
-      font: '48px monospace'
-    })
-    restartButton.x = centerX - (restartButton.width / 2)
-    restartButton.y = centerY - (restartButton.height)
-    restartButton.onClick(() => $(window).trigger('transition', GameView))
-    restartButton.move()
-    this.stage.addChild(restartButton.body)
+      this.entities = []
+      this.stage.children = []
+      this.createEntitites()
+      console.log(this.entities);
+      $(window).trigger('key-space')
 
-    BREAKOUTRUNNING = false
+    } else {
+
+      // End Game Text
+      let text = new PIXI.Text('Game Over', {
+        font: '72px monospace',
+        fill: '#ff7700',
+        align: 'center'
+      });
+
+      text.x = (this.view.width / 2) - (text.width / 2);
+      text.y = (this.view.height / 2) - (text.height * 3);
+      this.stage.addChild(text)
+
+      // UI Buttons
+      let centerX = this.view.width / 2
+      let centerY = this.view.height / 2
+      let restartButton = new CanvasButton({
+        text: 'Restart',
+        font: '48px monospace'
+      })
+      restartButton.x = centerX - (restartButton.width / 2)
+      restartButton.y = centerY - (restartButton.height)
+      restartButton.onClick(() => $(window).trigger('transition', GameView))
+      restartButton.move()
+      this.stage.addChild(restartButton.body)
+
+      BREAKOUTRUNNING = false
+    }
   }
 }
 
