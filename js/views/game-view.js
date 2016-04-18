@@ -6,43 +6,32 @@ window.BREAKOUTRUNNING = true; // global variable because I'm lazy and dumb
 import Ball from '../entities/ball.js'
 import Brick from '../entities/brick.js'
 import Paddle from '../entities/paddle.js'
-import Follower from '../entities/follower.js'
 import CanvasButton from '../ui/button.js'
 import View from './view.js'
+
+class NNPlayer {
+  constructor(inputDim) {
+    this.inputDim = inputDim
+    this.hiddenDim = Math.round(inputDim * 1.2)
+    this.outputDim = 1
+    this.network = new synaptic.Architect.Perceptron(this.inputDim, this.hiddenDim, this.outputDim)
+  }
+
+  learn(input, target) {
+    this.network.propagate(0.01, [target])
+    return this.network.activate(input)
+  }
+}
+
 
 export default class GameView  extends View {
   constructor(stage, renderer) {
     super(stage, renderer)
     BREAKOUTRUNNING = true
-    this.aiWorker = null
-    this.aiPlaying = false
+    this.nnPlayer = null
+    this.nnPlaying = false
     this.bricksTotal = 0
     this.bricksKilled = 0
-
-    this.scaledCanvas = $(`<canvas id="ai-render" width="40" height="40"></canvas>`)[0]
-    this.scaleCanvasWidth = this.scaledCanvas.width / this.view.width
-    this.scaleCanvasHeight = this.scaledCanvas.height / this.view.height
-    $('body').append(this.scaledCanvas)
-    this.scaledCtx = this.scaledCanvas.getContext('2d')
-    this.transferImage = new Image()
-    this.transferImage.onload = () => {
-      let width = this.scaledCanvas.width
-      let height = this.scaledCanvas.height
-      this.scaledCtx.drawImage(
-        this.transferImage, 0, 0, this.scaledCanvas.width, this.scaledCanvas.height / 2
-      );
-      this.scaledCtx.fillStyle = '#000000'
-      let x = this.entities[1].x * this.scaleCanvasWidth
-      this.scaledCtx.fillRect(x - 1, 0, 2, 20)
-    }
-    this.transferBinImage = new Image()
-    this.transferBinImage.onload = () => {
-      this.scaledCtx.drawImage(
-        this.transferBinImage, 0, this.transferImage.height, this.scaledCanvas.width, this.scaledCanvas.height
-      )
-    }
-
-    // TODO: also display getAIData info
 
     this.createUIElements()
     this.createEntitites()
@@ -50,7 +39,7 @@ export default class GameView  extends View {
     $(window).on('key-esc', (event) => { BREAKOUTRUNNING = !BREAKOUTRUNNING })
 
     $(document).on('mousemove touchstart touchmove', (event) => {
-      if (this.aiPlaying) return
+      if (this.nnPlaying) return
       var {x, y} = pointerEventToXY(event)
       if (this.paddle) this.paddle.x = x - this.paddle.width / 2
     })
@@ -87,7 +76,7 @@ export default class GameView  extends View {
     let yOffset = this.view.height / 8
     this.paddle = new Paddle(yOffset)
     this.entities.push(this.paddle)
-    this.entities.push(new Ball(0, 0, this.paddle))
+    this.entities.push(new Ball(this.view.width / 2, this.view.height - yOffset - 50, this.paddle))
 
     let blocksWidth = this.view.width / 80
 
@@ -102,56 +91,52 @@ export default class GameView  extends View {
     for (let i in this.entities) {
       this.stage.addChild(this.entities[i].body)
     }
-  }
 
-  onAiMessage(event) {
-    console.log(event.data)
-    this.paddle.x = event.data * this.view.width
+    // create nn input array so we don't have to createa a new one every frame
+    // this.nnInput = new Array(this.entities.length * 2)
+    this.nnInput = new Float64Array(this.entities.length * 2)
+    // this.nnInput = new Float64Array(4)
   }
 
   getAIData() {
-    let inData = this.scaledCtx.getImageData(0, 0, this.scaledCanvas.width, this.scaledCanvas.height).data
-    let outData = new Uint8Array(inData.length / 8)
-    for (let i = 0; i < inData.length / 2; i += 4) {
-      if (inData[i] < 240 || inData[i+1] < 240 || inData[i+2] < 240)
-        outData[i / 4] = 1
-      else
-        outData[i / 4] = 0
+    for (let i = 0; i < this.nnInput.length; i += 2) {
+      // if the entity doesn't exist it becomes a 0, 0 value
+      // not sure if that's going to work but hopefully it's good
+      let e = this.entities[i / 2] || { x : 0, y : 0 }
+      this.nnInput[i  ] = e.x / this.view.width > 0 ? e.x / this.view.width : 0
+      this.nnInput[i+1] = e.y / this.view.height > 0 ? e.y / this.view.height : 0
     }
-    return outData
+
+    return this.nnInput
   }
 
   onAiButtonClick() {
-    this.aiPlaying = !this.aiPlaying
-    if (this.aiPlaying) {
-      console.log('AI PLAYING');
-      this.aiWorker = new Worker("./js/ai.js")
-      this.aiWorker.onmessage = (event) => this.onAiMessage(event)
-      this.aiWorker.postMessage({
-        type: 'nn-init',
-        inputDim: this.getAIData().length
-      })
+    this.nnPlaying = !this.nnPlaying
+    if (this.nnPlaying) {
+      this.nnPlayer = new NNPlayer(this.getAIData().length)
     } else {
-      console.log('AI NOT PLAYING');
-      this.aiWorker.terminate()
-      this.aiWorker = null
+      this.nnPlayer = null
     }
   }
 
   update() {
     if (BREAKOUTRUNNING) {
-      if (this.aiPlaying){
-        // console.log('trying to post a message to the worker', this.aiWorker);
-        this.aiWorker.postMessage({
-          type: 'learning-data',
-          input: this.getAIData(),
-          target: this.entities[1].x / this.view.width // normalize the ball's x value
-        })
+      if (this.nnPlaying){
+        let ballX = this.entities[1].x
+        let paddleX = this.entities[0].x + this.paddle.width / 2
+        let target = ((ballX - paddleX) / (this.view.width * 2)) + 0.5
+        let output = this.nnPlayer.learn(
+          this.getAIData(),
+          target
+        )
+        console.log('this.paddle.width', this.paddle.width);
+        console.log('target', target);
+        if (!Number.isNaN(output[0]))
+          this.paddle.vx = (output[0] - 0.5) * 200
       }
 
       this.checkEdges()
       this.checkCollisions()
-      this.updateTinyCanvas()
 
       // garbage collect dead entities after all updates
       for (let i in this.entities) {
@@ -167,19 +152,6 @@ export default class GameView  extends View {
           .move();
       }
     }
-  }
-
-  updateTinyCanvas() {
-    this.transferImage.src = this.view.toDataURL()
-    let binImageData = this.scaledCtx.createImageData(40, 20)
-    let aiData = this.getAIData()
-    for (let i = 0; i < aiData.length; i++) {
-      binImageData.data[i * 4 + 0] = aiData[i] * 255
-      binImageData.data[i * 4 + 1] = aiData[i] * 255
-      binImageData.data[i * 4 + 2] = aiData[i] * 255
-      binImageData.data[i * 4 + 3] = 255
-    }
-    this.scaledCtx.putImageData(binImageData, 0, 20)
   }
 
   checkEdges() {
@@ -198,8 +170,7 @@ export default class GameView  extends View {
       } else if (entity.y + entity.height > this.view.height){
         entity.y = this.view.height - entity.height
         entity.vy *= -1
-        // TODO: fix this eventually
-        // if (entity instanceof Ball) this.loseGame()
+        if (entity instanceof Ball) this.loseGame()
       }
     }
   }
@@ -213,7 +184,6 @@ export default class GameView  extends View {
         for (let j in this.entities) {
           if (i === j) continue // so the entity doesn't collide with itself
           let other = this.entities[j]
-          if (other instanceof Follower) continue // followers don't collide
 
           if (this.isColliding(entity, other)) {
             this.collide(entity, other)
@@ -300,31 +270,43 @@ export default class GameView  extends View {
   }
 
   loseGame() {
-    // End Game Text
-    let text = new PIXI.Text('Game Over', {
-      font: '72px monospace',
-      fill: '#ff7700',
-      align: 'center'
-    });
 
-    text.x = (this.view.width / 2) - (text.width / 2);
-    text.y = (this.view.height / 2) - (text.height * 3);
-    this.stage.addChild(text)
+    if ( this.nnPlaying) {
 
-    // UI Buttons
-    let centerX = this.view.width / 2
-    let centerY = this.view.height / 2
-    let restartButton = new CanvasButton({
-      text: 'Restart',
-      font: '48px monospace'
-    })
-    restartButton.x = centerX - (restartButton.width / 2)
-    restartButton.y = centerY - (restartButton.height)
-    restartButton.onClick(() => $(window).trigger('transition', GameView))
-    restartButton.move()
-    this.stage.addChild(restartButton.body)
+      this.entities = []
+      this.stage.children = []
+      this.createEntitites()
+      console.log(this.entities);
+      $(window).trigger('key-space')
 
-    BREAKOUTRUNNING = false
+    } else {
+
+      // End Game Text
+      let text = new PIXI.Text('Game Over', {
+        font: '72px monospace',
+        fill: '#ff7700',
+        align: 'center'
+      });
+
+      text.x = (this.view.width / 2) - (text.width / 2);
+      text.y = (this.view.height / 2) - (text.height * 3);
+      this.stage.addChild(text)
+
+      // UI Buttons
+      let centerX = this.view.width / 2
+      let centerY = this.view.height / 2
+      let restartButton = new CanvasButton({
+        text: 'Restart',
+        font: '48px monospace'
+      })
+      restartButton.x = centerX - (restartButton.width / 2)
+      restartButton.y = centerY - (restartButton.height)
+      restartButton.onClick(() => $(window).trigger('transition', GameView))
+      restartButton.move()
+      this.stage.addChild(restartButton.body)
+
+      BREAKOUTRUNNING = false
+    }
   }
 }
 
