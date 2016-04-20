@@ -674,34 +674,13 @@ var _view2 = _interopRequireDefault(_view);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 window.BREAKOUTRUNNING = true; // global variable because I'm lazy and dumb
-
-var NNPlayer = function () {
-  function NNPlayer(inputDim) {
-    _classCallCheck(this, NNPlayer);
-
-    this.inputDim = inputDim;
-    this.hiddenDim = Math.round(inputDim * 1.2);
-    this.outputDim = 1;
-    this.network = new synaptic.Architect.Perceptron(this.inputDim, this.hiddenDim, this.outputDim);
-  }
-
-  _createClass(NNPlayer, [{
-    key: 'learn',
-    value: function learn(input, target) {
-      this.network.propagate(0.01, [target]);
-      return this.network.activate(input);
-    }
-  }]);
-
-  return NNPlayer;
-}();
 
 var GameView = function (_View) {
   _inherits(GameView, _View);
@@ -712,7 +691,7 @@ var GameView = function (_View) {
     var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(GameView).call(this, stage, renderer));
 
     BREAKOUTRUNNING = true;
-    _this.nnPlayer = null;
+    _this.nnWorker = null;
     _this.nnPlaying = false;
     _this.bricksTotal = 0;
     _this.bricksKilled = 0;
@@ -809,10 +788,22 @@ var GameView = function (_View) {
     value: function onAiButtonClick() {
       this.nnPlaying = !this.nnPlaying;
       if (this.nnPlaying) {
-        this.nnPlayer = new NNPlayer(this.getAIData().length);
+        this.nnWorker = new Worker('./js/ai.js');
+        this.nnWorker.onmessage = this.onNNMessage;
+        this.nnWorker.postMessage({
+          type: 'nn-init',
+          inputDim: this.getAIData().length
+        });
       } else {
-        this.nnPlayer = null;
+        this.nnWorker = null;
       }
+    }
+  }, {
+    key: 'onNNMessage',
+    value: function onNNMessage(event) {
+      console.log('paddle', this.entities[0]);
+      console.log(this);
+      this.entities[0].vx = (event.data[0] - 0.5) * 200;
     }
   }, {
     key: 'update',
@@ -822,10 +813,11 @@ var GameView = function (_View) {
           var ballX = this.entities[1].x;
           var paddleX = this.entities[0].x + this.paddle.width / 2;
           var target = (ballX - paddleX) / (this.view.width * 2) + 0.5;
-          var output = this.nnPlayer.learn(this.getAIData(), target);
-          console.log('this.paddle.width', this.paddle.width);
-          console.log('target', target);
-          if (!Number.isNaN(output[0])) this.paddle.vx = (output[0] - 0.5) * 200;
+          if (this.nnWorker) this.nnWorker.postMessage({
+            type: 'learning-data',
+            target: target,
+            input: this.getAIData()
+          });
         }
 
         this.checkEdges();
@@ -967,7 +959,6 @@ var GameView = function (_View) {
         this.entities = [];
         this.stage.children = [];
         this.createEntitites();
-        console.log(this.entities);
         $(window).trigger('key-space');
       } else {
 

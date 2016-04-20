@@ -9,26 +9,12 @@ import Paddle from '../entities/paddle.js'
 import CanvasButton from '../ui/button.js'
 import View from './view.js'
 
-class NNPlayer {
-  constructor(inputDim) {
-    this.inputDim = inputDim
-    this.hiddenDim = Math.round(inputDim * 1.2)
-    this.outputDim = 1
-    this.network = new synaptic.Architect.Perceptron(this.inputDim, this.hiddenDim, this.outputDim)
-  }
-
-  learn(input, target) {
-    this.network.propagate(0.01, [target])
-    return this.network.activate(input)
-  }
-}
-
 
 export default class GameView  extends View {
   constructor(stage, renderer) {
     super(stage, renderer)
     BREAKOUTRUNNING = true
-    this.nnPlayer = null
+    this.nnWorker = null
     this.nnPlaying = false
     this.bricksTotal = 0
     this.bricksKilled = 0
@@ -113,10 +99,21 @@ export default class GameView  extends View {
   onAiButtonClick() {
     this.nnPlaying = !this.nnPlaying
     if (this.nnPlaying) {
-      this.nnPlayer = new NNPlayer(this.getAIData().length)
+      this.nnWorker = new Worker('./js/ai.js')
+      this.nnWorker.onmessage = this.onNNMessage
+      this.nnWorker.postMessage({
+        type: 'nn-init',
+        inputDim: this.getAIData().length
+      })
     } else {
-      this.nnPlayer = null
+      this.nnWorker = null
     }
+  }
+
+  onNNMessage(event) {
+    console.log('paddle', this.entities[0]);
+    console.log(this);
+    this.entities[0].vx = (event.data[0] - 0.5) * 200
   }
 
   update() {
@@ -125,14 +122,11 @@ export default class GameView  extends View {
         let ballX = this.entities[1].x
         let paddleX = this.entities[0].x + this.paddle.width / 2
         let target = ((ballX - paddleX) / (this.view.width * 2)) + 0.5
-        let output = this.nnPlayer.learn(
-          this.getAIData(),
-          target
-        )
-        console.log('this.paddle.width', this.paddle.width);
-        console.log('target', target);
-        if (!Number.isNaN(output[0]))
-          this.paddle.vx = (output[0] - 0.5) * 200
+        if (this.nnWorker) this.nnWorker.postMessage({
+          type: 'learning-data',
+          target,
+          input: this.getAIData()
+        })
       }
 
       this.checkEdges()
@@ -271,12 +265,11 @@ export default class GameView  extends View {
 
   loseGame() {
 
-    if ( this.nnPlaying) {
+    if (this.nnPlaying) {
 
       this.entities = []
       this.stage.children = []
       this.createEntitites()
-      console.log(this.entities);
       $(window).trigger('key-space')
 
     } else {

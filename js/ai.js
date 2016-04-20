@@ -1,7 +1,6 @@
 // jshint -W117
 // jshint -W097
 "use strict";
-console.log('HELLO????');
 
 let window = self
 importScripts('../lib/synaptic.min.js');
@@ -9,37 +8,36 @@ importScripts('../lib/synaptic.min.js');
 let interval = setInterval(() => console.log('I exist'), 100)
 console.log('interval:', interval);
 
-class AIPlayer {
+class NNPlayer {
   constructor(inputDim) {
-    console.log('making the AIPLAYER');
+    this.dataPoints = 0
+    this.maxDataPoints = 1000
+
     this.inputDim = inputDim
-    this.hiddenDim = inputDim * 1.5
+    this.hiddenDim = Math.round(inputDim * 1.2)
     this.outputDim = 1
-    console.log('input dim:', this.inputDim);
-    // console.log('making the network....', new synaptic.Architect.Perceptron(5 * 40, 5 * 40 * 1.5, 1));
-    this.network = new synaptic.Architect.Perceptron(5 * 40, 5 * 40 * 1.5, this.outputDim)
-    console.log('made the network...');
+    this.network = new synaptic.Architect.Perceptron(this.inputDim, this.hiddenDim, this.outputDim)
   }
 
-  learn(data) {
-    console.log('learning...');
-    this.network.propogate(0.1, data.target)
-    postMessage(this.network.activate(data.input)) // .map((num, i) => num / 255)
+  activate(input, target) {
+    if (this.dataPoints === this.maxDataPoints) console.log('finished learning');
+    if (this.dataPoints++ < this.maxDataPoints)
+      this.network.propagate(0.01, [target])
+
+    postMessage(this.network.activate(input))
   }
 }
 
 var ai;
 
 onmessage = function(event) {
-  console.log('worker got an event:', event);
+  // console.log('worker got an event:', event);
   switch (event.data.type) {
     case 'nn-init':
-      console.log('worker got init message');
-      ai = new AIPlayer(event.data.inputDim)
+      ai = new NNPlayer(event.data.inputDim)
       break;
     case 'learning-data':
-      console.log('worker got learning data');
-      // ai.learn(event.data)
+      ai.activate(event.data.input, event.data.target)
       break;
     default:
       console.error(event.data.type, 'is not recognized as an event type');
