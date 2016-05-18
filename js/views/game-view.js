@@ -6,16 +6,30 @@ window.BREAKOUTRUNNING = true; // global variable because I'm lazy and dumb
 import Ball from '../entities/ball.js'
 import Brick from '../entities/brick.js'
 import Paddle from '../entities/paddle.js'
-import Follower from '../entities/follower.js'
 import CanvasButton from '../ui/button.js'
 import View from './view.js'
+
+class NNPlayer {
+  constructor(inputDim) {
+    this.inputDim = inputDim
+    this.hiddenDim = Math.round(inputDim * 1.2)
+    this.outputDim = 1
+    this.network = new synaptic.Architect.Perceptron(this.inputDim, this.hiddenDim, this.outputDim)
+  }
+
+  learn(input, target) {
+    this.network.propagate(0.01, [target])
+    return this.network.activate(input)
+  }
+}
+
 
 export default class GameView  extends View {
   constructor(stage, renderer) {
     super(stage, renderer)
     BREAKOUTRUNNING = true
-    this.aiWorker = null
-    this.aiPlaying = false
+    this.nnPlayer = null
+    this.nnPlaying = false
     this.bricksTotal = 0
     this.bricksKilled = 0
 
@@ -25,6 +39,7 @@ export default class GameView  extends View {
     $(window).on('key-esc', (event) => { BREAKOUTRUNNING = !BREAKOUTRUNNING })
 
     $(document).on('mousemove touchstart touchmove', (event) => {
+      if (this.nnPlaying) return
       var {x, y} = pointerEventToXY(event)
       if (this.paddle) this.paddle.x = x - this.paddle.width / 2
     })
@@ -47,19 +62,21 @@ export default class GameView  extends View {
       this.stage.removeChild(spaceText)
     })
 
-    // let aiButton = new CanvasButton({})
-    // this.stage.addChild(aiButton.body)
-    // aiButton.onClick(() => {
-    //   this.onAiButtonClick()
-    //   $(window).trigger('key-space')
-    // })
+    let aiButton = new CanvasButton({
+      text: 'Toggle AI'
+    })
+    this.stage.addChild(aiButton.body)
+    aiButton.onClick(() => {
+      this.onAiButtonClick()
+      $(window).trigger('key-space')
+    })
   }
 
   createEntitites() {
     let yOffset = this.view.height / 8
     this.paddle = new Paddle(yOffset)
     this.entities.push(this.paddle)
-    this.entities.push(new Ball(0, 0, this.paddle))
+    this.entities.push(new Ball(this.view.width / 2, this.view.height - yOffset - 50, this.paddle))
 
     let blocksWidth = this.view.width / 80
 
@@ -74,32 +91,51 @@ export default class GameView  extends View {
     for (let i in this.entities) {
       this.stage.addChild(this.entities[i].body)
     }
+
+    // create nn input array so we don't have to createa a new one every frame
+    // this.nnInput = new Array(this.entities.length * 2)
+    this.nnInput = new Float64Array(this.entities.length * 2)
+    // this.nnInput = new Float64Array(4)
   }
 
-  onAiMessage(event) {
-    console.log(event);
+  getAIData() {
+    for (let i = 0; i < this.nnInput.length; i += 2) {
+      // if the entity doesn't exist it becomes a 0, 0 value
+      // not sure if that's going to work but hopefully it's good
+      let e = this.entities[i / 2] || { x : 0, y : 0 }
+      this.nnInput[i  ] = e.x / this.view.width > 0 ? e.x / this.view.width : 0
+      this.nnInput[i+1] = e.y / this.view.height > 0 ? e.y / this.view.height : 0
+    }
+
+    return this.nnInput
   }
 
   onAiButtonClick() {
-    this.aiPlaying = !this.aiPlaying
-    if (this.aiPlaying) {
-      this.aiWorker = new Worker("./js/ai.js");
-      this.aiWorker.onmessage = (event) => {
-        this.onAiMessage(event.data)
-      }
-
+    this.nnPlaying = !this.nnPlaying
+    if (this.nnPlaying) {
+      this.nnPlayer = new NNPlayer(this.getAIData().length)
     } else {
-      this.aiWorker.terminate()
-      this.aiWorker = null
+      this.nnPlayer = null
     }
-    this.aiWorker.postMessage('ping')
   }
 
   update() {
-    this.checkEdges()
-
-    // update and move all entities
     if (BREAKOUTRUNNING) {
+      if (this.nnPlaying){
+        let ballX = this.entities[1].x
+        let paddleX = this.entities[0].x + this.paddle.width / 2
+        let target = ((ballX - paddleX) / (this.view.width * 2)) + 0.5
+        let output = this.nnPlayer.learn(
+          this.getAIData(),
+          target
+        )
+        console.log('this.paddle.width', this.paddle.width);
+        console.log('target', target);
+        if (!Number.isNaN(output[0]))
+          this.paddle.vx = (output[0] - 0.5) * 200
+      }
+
+      this.checkEdges()
       this.checkCollisions()
 
       // garbage collect dead entities after all updates
@@ -119,7 +155,6 @@ export default class GameView  extends View {
   }
 
   checkEdges() {
-
     for (let i in this.entities) {
       let entity = this.entities[i]
 
@@ -149,12 +184,9 @@ export default class GameView  extends View {
         for (let j in this.entities) {
           if (i === j) continue // so the entity doesn't collide with itself
           let other = this.entities[j]
-          if (other instanceof Follower) continue // followers don't collide
 
           if (this.isColliding(entity, other)) {
-              // console.log(entity.id + ' ->*<- ' + other.id + ' at ' + entity.pos + ' and ' + other.pos);
-              // console.log(`${other.id} is ${ other.alive ? 'alive' : 'dead' }`);
-              this.collide(entity, other)
+            this.collide(entity, other)
           }
         }
       }
@@ -191,15 +223,14 @@ export default class GameView  extends View {
       if (ball.x < other.x + other.width &&
           ball.x + ball.width > other.x) {
         ball.vy *= -1
+        ball.ay *= -1
       }
 
       if (ball.y < other.y + other.height &&
           ball.y + ball.height > other.y) {
         ball.vx *= -1
+        ball.ax *= -1
       }
-
-      // ball.vy *= -1
-      // ball.ay *= -1
 
     } else if (other instanceof Paddle) {
       // bounce the ball
@@ -239,41 +270,43 @@ export default class GameView  extends View {
   }
 
   loseGame() {
-    // End Game Text
-    let text = new PIXI.Text('Game Over', {
-      font: '72px monospace',
-      fill: '#ff7700',
-      align: 'center'
-    });
 
-    text.x = (this.view.width / 2) - (text.width / 2);
-    text.y = (this.view.height / 2) - (text.height * 3);
-    this.stage.addChild(text)
+    if ( this.nnPlaying) {
 
-    // UI Buttons
-    let centerX = this.view.width / 2
-    let centerY = this.view.height / 2
-    let restartButton = new CanvasButton({
-      text: 'Restart',
-      font: '48px monospace'
-    })
-    restartButton.x = centerX - (restartButton.width / 2)
-    restartButton.y = centerY - (restartButton.height)
-    restartButton.onClick(() => $(window).trigger('transition', GameView))
-    restartButton.move()
-    this.stage.addChild(restartButton.body)
+      this.entities = []
+      this.stage.children = []
+      this.createEntitites()
+      console.log(this.entities);
+      $(window).trigger('key-space')
 
-    // let homeButton = new CanvasButton(this.stage, {
-    //   text: 'Home',
-    //   textColor: '#ff7700',
-    //   font: '48px monospace'
-    // })
-    // homeButton.x = centerX - (homeButton.textWidth() / 2)
-    // homeButton.y = centerY + (homeButton.textHeight())
-    // homeButton.draw()
-    // homeButton.onClick(() => $(window).trigger('transition', StartView))
+    } else {
 
-    BREAKOUTRUNNING = false
+      // End Game Text
+      let text = new PIXI.Text('Game Over', {
+        font: '72px monospace',
+        fill: '#ff7700',
+        align: 'center'
+      });
+
+      text.x = (this.view.width / 2) - (text.width / 2);
+      text.y = (this.view.height / 2) - (text.height * 3);
+      this.stage.addChild(text)
+
+      // UI Buttons
+      let centerX = this.view.width / 2
+      let centerY = this.view.height / 2
+      let restartButton = new CanvasButton({
+        text: 'Restart',
+        font: '48px monospace'
+      })
+      restartButton.x = centerX - (restartButton.width / 2)
+      restartButton.y = centerY - (restartButton.height)
+      restartButton.onClick(() => $(window).trigger('transition', GameView))
+      restartButton.move()
+      this.stage.addChild(restartButton.body)
+
+      BREAKOUTRUNNING = false
+    }
   }
 }
 
