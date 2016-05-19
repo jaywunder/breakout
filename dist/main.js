@@ -318,64 +318,6 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var Follower = function (_Entity) {
-  _inherits(Follower, _Entity);
-
-  function Follower(other) {
-    _classCallCheck(this, Follower);
-
-    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Follower).call(this, 'follower', {
-      x: 0, y: 0
-    }));
-
-    _this.other = other;
-
-    _this.body.graphics.beginFill('#000000').drawCircle(_this.x, _this.y, 10);
-    return _this;
-  }
-
-  _createClass(Follower, [{
-    key: 'moveTo',
-    value: function moveTo(other) {
-      this.other = other;
-    }
-  }, {
-    key: 'update',
-    value: function update() {
-      this.pos = this.other.pos;
-
-      return this;
-    }
-  }]);
-
-  return Follower;
-}(_entity2.default);
-
-exports.default = Follower;
-
-},{"./entity.js":3}],5:[function(require,module,exports){
-// jshint -W117
-// jshint -W097
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _entity = require('./entity.js');
-
-var _entity2 = _interopRequireDefault(_entity);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
 var Paddle = function (_Entity) {
   _inherits(Paddle, _Entity);
 
@@ -427,7 +369,7 @@ var Paddle = function (_Entity) {
 
 exports.default = Paddle;
 
-},{"./entity.js":3}],6:[function(require,module,exports){
+},{"./entity.js":3}],5:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 'use strict';
@@ -465,46 +407,22 @@ window.addEventListener('keydown', function (event) {
       // space key
       $(window).trigger('key-space');
       break;
+    case 187:
+      // plus key
+      $(window).trigger('download-image');
+      break;
   }
+});
+
+$(window).on('download-image', function () {
+  var canvas = document.querySelector('canvas');
+  var data64 = canvas.toDataURL("image/png");
+  console.log(data64);
 });
 
 new _viewController2.default();
 
-// var renderer = PIXI.autoDetectRenderer(800, 600,{backgroundColor : 0x1099bb});
-// document.body.appendChild(renderer.view);
-//
-// // create the root of the scene graph
-// var stage = new PIXI.Container();
-//
-// // create a texture from an image path
-// var texture = PIXI.Texture.fromImage('assets/bunny.png');
-//
-// // create a new Sprite using the texture
-// var bunny = new PIXI.Sprite(texture);
-//
-// // center the sprite's anchor point
-// bunny.anchor.x = 0.5;
-// bunny.anchor.y = 0.5;
-//
-// // move the sprite to the center of the screen
-// bunny.position.x = 200;
-// bunny.position.y = 150;
-//
-// stage.addChild(bunny);
-//
-// // start animating
-// animate();
-// function animate() {
-//     requestAnimationFrame(animate);
-//
-//     // just for fun, let's rotate mr rabbit a little
-//     bunny.rotation += 0.1;
-//
-//     // render the container
-//     renderer.render(stage);
-// }
-
-},{"./view-controller.js":8}],7:[function(require,module,exports){
+},{"./view-controller.js":7}],6:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 'use strict';
@@ -545,6 +463,7 @@ var CanvasButton = function (_Entity) {
     _this.tintOff = args.tintOff || 0xe64703;
 
     _this.listeners = [];
+    _this.canActivate = true;
 
     var text = new PIXI.Text(_this.text, { fill: _this.textFill });
     var left = new PIXI.Sprite.fromImage('assets/button-left.png');
@@ -580,21 +499,35 @@ var CanvasButton = function (_Entity) {
       var child = _this.body.children[_i];
       child.interactive = true;
       child.on('mousedown', function (event) {
-        for (var _i2 in _this.listeners) {
-          _this.listeners[_i2](event);
-        }
+        _this.activate();
       });
 
       child.on('touchstart', function (event) {
-        for (var _i3 in _this.listeners) {
-          _this.listeners[_i3](event);
-        }
+        _this.canActivate();
       });
     }
     return _this;
   }
 
   _createClass(CanvasButton, [{
+    key: 'activate',
+    value: function activate() {
+      if (this.canActivate) for (var i in this.listeners) {
+        this.listeners[i](event);
+      }
+      this.delayActivation();
+    }
+  }, {
+    key: 'delayActivation',
+    value: function delayActivation() {
+      var _this2 = this;
+
+      this.canActivate = false;
+      setTimeout(function (_) {
+        return _this2.canActivate = true;
+      }, 200);
+    }
+  }, {
     key: 'onClick',
     value: function onClick(func) {
       this.listeners.push(func);
@@ -606,7 +539,7 @@ var CanvasButton = function (_Entity) {
 
 exports.default = CanvasButton;
 
-},{"../entities/entity.js":3}],8:[function(require,module,exports){
+},{"../entities/entity.js":3}],7:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 'use strict';
@@ -635,7 +568,9 @@ var ViewController = function () {
 
     this.stage = new PIXI.Container();
     this.renderer = PIXI.autoDetectRenderer(window.innerWidth, window.innerHeight, {
-      backgroundColor: 0xffffff
+      backgroundColor: 0xffffff,
+      view: document.getElementById('pixi-render'),
+      preserveDrawingBuffer: true
     });
     document.body.appendChild(this.renderer.view);
 
@@ -706,7 +641,7 @@ var ViewController = function () {
 
 exports.default = ViewController;
 
-},{"./views/game-view.js":9,"./views/start-view.js":10}],9:[function(require,module,exports){
+},{"./views/game-view.js":8,"./views/start-view.js":9}],8:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 "use strict";
@@ -729,10 +664,6 @@ var _paddle = require('../entities/paddle.js');
 
 var _paddle2 = _interopRequireDefault(_paddle);
 
-var _follower = require('../entities/follower.js');
-
-var _follower2 = _interopRequireDefault(_follower);
-
 var _button = require('../ui/button.js');
 
 var _button2 = _interopRequireDefault(_button);
@@ -743,13 +674,34 @@ var _view2 = _interopRequireDefault(_view);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 window.BREAKOUTRUNNING = true; // global variable because I'm lazy and dumb
+
+var NNPlayer = function () {
+  function NNPlayer(inputDim) {
+    _classCallCheck(this, NNPlayer);
+
+    this.inputDim = inputDim;
+    this.hiddenDim = Math.round(inputDim * 1.2);
+    this.outputDim = 1;
+    this.network = new synaptic.Architect.Perceptron(this.inputDim, this.hiddenDim, this.outputDim);
+  }
+
+  _createClass(NNPlayer, [{
+    key: 'learn',
+    value: function learn(input, target) {
+      this.network.propagate(0.01, [target]);
+      return this.network.activate(input);
+    }
+  }]);
+
+  return NNPlayer;
+}();
 
 var GameView = function (_View) {
   _inherits(GameView, _View);
@@ -760,8 +712,8 @@ var GameView = function (_View) {
     var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(GameView).call(this, stage, renderer));
 
     BREAKOUTRUNNING = true;
-    _this.aiWorker = null;
-    _this.aiPlaying = false;
+    _this.nnPlayer = null;
+    _this.nnPlaying = false;
     _this.bricksTotal = 0;
     _this.bricksKilled = 0;
 
@@ -773,6 +725,8 @@ var GameView = function (_View) {
     });
 
     $(document).on('mousemove touchstart touchmove', function (event) {
+      if (_this.nnPlaying) return;
+
       var _pointerEventToXY = pointerEventToXY(event);
 
       var x = _pointerEventToXY.x;
@@ -801,12 +755,14 @@ var GameView = function (_View) {
         _this2.stage.removeChild(spaceText);
       });
 
-      // let aiButton = new CanvasButton({})
-      // this.stage.addChild(aiButton.body)
-      // aiButton.onClick(() => {
-      //   this.onAiButtonClick()
-      //   $(window).trigger('key-space')
-      // })
+      var aiButton = new _button2.default({
+        text: 'Toggle AI'
+      });
+      this.stage.addChild(aiButton.body);
+      aiButton.onClick(function () {
+        _this2.onAiButtonClick();
+        $(window).trigger('key-space');
+      });
     }
   }, {
     key: 'createEntitites',
@@ -814,7 +770,7 @@ var GameView = function (_View) {
       var yOffset = this.view.height / 8;
       this.paddle = new _paddle2.default(yOffset);
       this.entities.push(this.paddle);
-      this.entities.push(new _ball2.default(0, 0, this.paddle));
+      this.entities.push(new _ball2.default(this.view.width / 2, this.view.height - yOffset - 50, this.paddle));
 
       var blocksWidth = this.view.width / 80;
 
@@ -829,36 +785,50 @@ var GameView = function (_View) {
       for (var i in this.entities) {
         this.stage.addChild(this.entities[i].body);
       }
+
+      // create nn input array so we don't have to createa a new one every frame
+      // this.nnInput = new Array(this.entities.length * 2)
+      this.nnInput = new Float64Array(this.entities.length * 2);
+      // this.nnInput = new Float64Array(4)
     }
   }, {
-    key: 'onAiMessage',
-    value: function onAiMessage(event) {
-      console.log(event);
+    key: 'getAIData',
+    value: function getAIData() {
+      for (var i = 0; i < this.nnInput.length; i += 2) {
+        // if the entity doesn't exist it becomes a 0, 0 value
+        // not sure if that's going to work but hopefully it's good
+        var e = this.entities[i / 2] || { x: 0, y: 0 };
+        this.nnInput[i] = e.x / this.view.width > 0 ? e.x / this.view.width : 0;
+        this.nnInput[i + 1] = e.y / this.view.height > 0 ? e.y / this.view.height : 0;
+      }
+
+      return this.nnInput;
     }
   }, {
     key: 'onAiButtonClick',
     value: function onAiButtonClick() {
-      var _this3 = this;
-
-      this.aiPlaying = !this.aiPlaying;
-      if (this.aiPlaying) {
-        this.aiWorker = new Worker("./js/ai.js");
-        this.aiWorker.onmessage = function (event) {
-          _this3.onAiMessage(event.data);
-        };
+      this.nnPlaying = !this.nnPlaying;
+      if (this.nnPlaying) {
+        this.nnPlayer = new NNPlayer(this.getAIData().length);
       } else {
-        this.aiWorker.terminate();
-        this.aiWorker = null;
+        this.nnPlayer = null;
       }
-      this.aiWorker.postMessage('ping');
     }
   }, {
     key: 'update',
     value: function update() {
-      this.checkEdges();
-
-      // update and move all entities
       if (BREAKOUTRUNNING) {
+        if (this.nnPlaying) {
+          var ballX = this.entities[1].x;
+          var paddleX = this.entities[0].x + this.paddle.width / 2;
+          var target = (ballX - paddleX) / (this.view.width * 2) + 0.5;
+          var output = this.nnPlayer.learn(this.getAIData(), target);
+          console.log('this.paddle.width', this.paddle.width);
+          console.log('target', target);
+          if (!Number.isNaN(output[0])) this.paddle.vx = (output[0] - 0.5) * 200;
+        }
+
+        this.checkEdges();
         this.checkCollisions();
 
         // garbage collect dead entities after all updates
@@ -877,7 +847,6 @@ var GameView = function (_View) {
   }, {
     key: 'checkEdges',
     value: function checkEdges() {
-
       for (var i in this.entities) {
         var entity = this.entities[i];
 
@@ -908,11 +877,8 @@ var GameView = function (_View) {
           for (var j in this.entities) {
             if (i === j) continue; // so the entity doesn't collide with itself
             var other = this.entities[j];
-            if (other instanceof _follower2.default) continue; // followers don't collide
 
             if (this.isColliding(entity, other)) {
-              // console.log(entity.id + ' ->*<- ' + other.id + ' at ' + entity.pos + ' and ' + other.pos);
-              // console.log(`${other.id} is ${ other.alive ? 'alive' : 'dead' }`);
               this.collide(entity, other);
             }
           }
@@ -946,22 +912,21 @@ var GameView = function (_View) {
 
         if (ball.x < other.x + other.width && ball.x + ball.width > other.x) {
           ball.vy *= -1;
+          ball.ay *= -1;
         }
 
         if (ball.y < other.y + other.height && ball.y + ball.height > other.y) {
           ball.vx *= -1;
+          ball.ax *= -1;
         }
-
-        // ball.vy *= -1
-        // ball.ay *= -1
       } else if (other instanceof _paddle2.default) {
-          // bounce the ball
-          ball.vy *= -1;
+        // bounce the ball
+        ball.vy *= -1;
 
-          // bounce the x direction depending on where the ball hit the paddle
-          var bounceX = ball.x + ball.width / 2 - other.x;
-          ball.vx = (bounceX / other.width - 0.5) * 20;
-        }
+        // bounce the x direction depending on where the ball hit the paddle
+        var bounceX = ball.x + ball.width / 2 - other.x;
+        ball.vx = (bounceX / other.width - 0.5) * 20;
+      }
     }
   }, {
     key: 'winGame',
@@ -996,43 +961,44 @@ var GameView = function (_View) {
   }, {
     key: 'loseGame',
     value: function loseGame() {
-      // End Game Text
-      var text = new PIXI.Text('Game Over', {
-        font: '72px monospace',
-        fill: '#ff7700',
-        align: 'center'
-      });
 
-      text.x = this.view.width / 2 - text.width / 2;
-      text.y = this.view.height / 2 - text.height * 3;
-      this.stage.addChild(text);
+      if (this.nnPlaying) {
 
-      // UI Buttons
-      var centerX = this.view.width / 2;
-      var centerY = this.view.height / 2;
-      var restartButton = new _button2.default({
-        text: 'Restart',
-        font: '48px monospace'
-      });
-      restartButton.x = centerX - restartButton.width / 2;
-      restartButton.y = centerY - restartButton.height;
-      restartButton.onClick(function () {
-        return $(window).trigger('transition', GameView);
-      });
-      restartButton.move();
-      this.stage.addChild(restartButton.body);
+        this.entities = [];
+        this.stage.children = [];
+        this.createEntitites();
+        console.log(this.entities);
+        $(window).trigger('key-space');
+      } else {
 
-      // let homeButton = new CanvasButton(this.stage, {
-      //   text: 'Home',
-      //   textColor: '#ff7700',
-      //   font: '48px monospace'
-      // })
-      // homeButton.x = centerX - (homeButton.textWidth() / 2)
-      // homeButton.y = centerY + (homeButton.textHeight())
-      // homeButton.draw()
-      // homeButton.onClick(() => $(window).trigger('transition', StartView))
+        // End Game Text
+        var text = new PIXI.Text('Game Over', {
+          font: '72px monospace',
+          fill: '#ff7700',
+          align: 'center'
+        });
 
-      BREAKOUTRUNNING = false;
+        text.x = this.view.width / 2 - text.width / 2;
+        text.y = this.view.height / 2 - text.height * 3;
+        this.stage.addChild(text);
+
+        // UI Buttons
+        var centerX = this.view.width / 2;
+        var centerY = this.view.height / 2;
+        var restartButton = new _button2.default({
+          text: 'Restart',
+          font: '48px monospace'
+        });
+        restartButton.x = centerX - restartButton.width / 2;
+        restartButton.y = centerY - restartButton.height;
+        restartButton.onClick(function () {
+          return $(window).trigger('transition', GameView);
+        });
+        restartButton.move();
+        this.stage.addChild(restartButton.body);
+
+        BREAKOUTRUNNING = false;
+      }
     }
   }]);
 
@@ -1056,7 +1022,7 @@ function pointerEventToXY(e) {
   return out;
 }
 
-},{"../entities/ball.js":1,"../entities/brick.js":2,"../entities/follower.js":4,"../entities/paddle.js":5,"../ui/button.js":7,"./view.js":11}],10:[function(require,module,exports){
+},{"../entities/ball.js":1,"../entities/brick.js":2,"../entities/paddle.js":4,"../ui/button.js":6,"./view.js":10}],9:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 'use strict';
@@ -1201,7 +1167,7 @@ var StartView = function () {
 
 exports.default = StartView;
 
-},{}],11:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 // jshint -W117
 // jshint -W097
 'use strict';
@@ -1238,4 +1204,4 @@ var View = function () {
 
 exports.default = View;
 
-},{}]},{},[6]);
+},{}]},{},[5]);
